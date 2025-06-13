@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Claude Company Tools Installation Script
-# Installs cca and ccs binaries to user's PATH
+# Installs storm and deploy binaries to user's PATH
 
 set -e
 
@@ -14,12 +14,12 @@ echo "Installing Claude Company Tools..."
 mkdir -p "$INSTALL_DIR"
 
 # Copy binaries
-cp "$SCRIPT_DIR/cca" "$INSTALL_DIR/"
-cp "$SCRIPT_DIR/ccs" "$INSTALL_DIR/"
+cp "$SCRIPT_DIR/bin/storm" "$INSTALL_DIR/"
+cp "$SCRIPT_DIR/bin/deploy" "$INSTALL_DIR/"
 
 # Make them executable
-chmod +x "$INSTALL_DIR/cca"
-chmod +x "$INSTALL_DIR/ccs"
+chmod +x "$INSTALL_DIR/storm"
+chmod +x "$INSTALL_DIR/deploy"
 
 # Add to PATH in shell configs
 add_to_path() {
@@ -40,7 +40,7 @@ add_to_path "$HOME/.profile"
 
 echo "Installation complete!"
 echo "Commands available:"
-echo "  cca - Claude Company Assistant"
-echo "  ccs - Claude Company Shell (tmux session manager)"
+echo "  storm - tmux session manager"
+echo "  deploy - AI task manager"
 echo ""
 echo "Please restart your terminal or run: source ~/.bashrc (or ~/.zshrc)"

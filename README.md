@@ -1,317 +1,313 @@
-# Claude Company Tools 🤖
+# Claude Company 🤖
 
-**Cross-shell compatible command-line tools for team collaboration with Claude AI.**
+**AI-powered project management system with intelligent task delegation**
 
-Claude Company Tools provides two powerful commands (`storm` and `deploy`) that transform your terminal into an AI-powered team workspace using tmux sessions and Claude AI integration.
+Claude Company transforms your development workflow by creating an AI-powered team where one Claude AI acts as a project manager, orchestrating multiple worker Claude AIs to collaboratively complete complex tasks.
 
-## ✨ Features
+## ✨ Key Features
 
-### ⚡ Storm (Session Manager)
-- **Multi-pane tmux session management** - Lightning-fast tmux session management
-- **Cross-shell compatibility** - Works seamlessly across bash, zsh, fish, and other shells
-- **Session lifecycle management** - Create, attach, switch, rename, and manage sessions
-- **Clean command interface** - Simple and intuitive command structure
+### 🎯 **AI Project Manager System**
+- **Smart Task Delegation**: Parent pane analyzes tasks and breaks them into manageable subtasks
+- **Intelligent Worker Management**: Automatically creates and manages child panes for parallel work
+- **Quality Control**: Built-in review system and integration testing
+- **Real-time Progress Monitoring**: Track completion status across all workers
 
-### 🚀 Deploy (AI Task Manager) 
-- **AI-powered task assignment** - Intelligently distribute tasks across team members
-- **Dual operation modes**:
-  - **AI-assisted mode** - Automatic task breakdown and intelligent distribution
-  - **Simple mode** - Direct task assignment to specific team members
-- **Real-time progress tracking** - Monitor task completion and team status
-- **Tmux integration** - Seamless integration with tmux pane management
+### ⚡ **STORM Session Manager**
+- **Lightning-fast tmux session management**
+- **Cross-shell compatibility** (bash, zsh, fish)
+- **Clean command interface** for session lifecycle management
 
-## 🔧 Installation
-
-### Quick Install (Recommended)
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/claude-company.git
-cd claude-company
-
-# Run the installation script
-./install.sh
-```
-
-### Manual Installation
-```bash
-# Build the binaries
-make build
-
-# Copy to your PATH
-cp bin/storm ~/bin/storm
-cp bin/deploy ~/bin/deploy
-chmod +x ~/bin/storm ~/bin/deploy
-
-# Add ~/bin to your PATH if not already added
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc
-```
-
-### Cross-platform Build
-```bash
-make build-cross
-```
+### 🔄 **Automated Workflow**
+- **Role Separation**: Manager for oversight, workers for implementation
+- **Automatic Pane Creation**: Dynamic scaling based on task complexity
+- **Quality Assurance**: Mandatory code review and build testing
+- **Seamless Integration**: Built-in tmux and Claude AI integration
 
 ## 🚀 Quick Start
 
-### 1. Start a Session
+### 1. Installation
 ```bash
-# Create and attach to a new session
-storm new my-project
+# Clone and build
+git clone https://github.com/yourusername/claude-company.git
+cd claude-company
+go build -o bin/ccs
 
-# List all sessions
-storm list
-
-# Attach to existing session
-storm attach my-project
+# Or use the install script
+./install.sh
 ```
 
-### 2. Setup Claude Company Environment
+### 2. Setup Claude Company Session
 ```bash
-# Setup tmux session with Claude AI integration
-./bin/deploy
-
-# This creates a structured workspace with:
-# - Top pane: Management interface
-# - Bottom pane: Claude AI assistant
+# Create tmux session with AI-powered workspace
+./bin/ccs
+# This creates a structured environment with manager and worker panes
 ```
 
-### 3. Assign Tasks to Team Members
+### 3. Assign Tasks to AI Team
 ```bash
-# AI-assisted mode (intelligent task processing)
-./bin/deploy -ai -task "Implement user authentication system" -pane %1
-
-# Simple mode (direct task assignment)  
-./bin/deploy -simple -task "Review code changes" -pane %2
+# AI Manager Mode (now the only mode)
+./bin/ccs --task "Implement user authentication system with JWT tokens"
 ```
 
-### 4. Manage Sessions
-```bash
-# List all sessions
-storm list
+### 4. Watch the Magic Happen
+1. **Manager pane** analyzes the task and creates a project plan
+2. **Worker panes** are automatically created and assigned specific subtasks
+3. **Implementation** happens in parallel across multiple Claude AIs
+4. **Quality control** - Manager reviews all work and coordinates testing
+5. **Integration** - Final build and validation
 
-# Attach to existing session
-storm attach my-project
+## 🏗️ Architecture Overview
 
-# Kill session
-storm kill my-project
+### **Role-Based AI Team Structure**
+
 ```
+┌─────────────────┬─────────────────┐
+│ 🎯 Manager Pane │ 🔧 Worker Pane  │
+│ (Claude AI #1)  │ (Claude AI #2)  │
+│                 │                 │
+│ • Task Analysis │ • Code Writing  │
+│ • Planning      │ • File Creation │
+│ • Review        │ • Implementation│
+│ • Quality Check │ • Bug Fixes     │
+├─────────────────┼─────────────────┤
+│ 🔍 Review Pane  │ 🧪 Test Pane    │
+│ (Claude AI #3)  │ (Claude AI #4)  │
+│                 │                 │
+│ • Code Review   │ • Unit Testing  │
+│ • Standards     │ • Integration   │
+│ • Optimization  │ • Validation    │
+│ • Documentation │ • Build Checks  │
+└─────────────────┴─────────────────┘
+```
+
+### **Workflow Process**
+
+1. **📋 Task Input**: You provide a high-level task description
+2. **🧠 Analysis**: Manager AI breaks down the task into subtasks  
+3. **🏭 Scaling**: Manager creates additional worker panes as needed
+4. **⚡ Parallel Execution**: Multiple Claude AIs work simultaneously
+5. **🔍 Quality Control**: Manager reviews all implementation work
+6. **🧪 Testing**: Automated build verification and testing
+7. **✅ Integration**: Final validation and completion
 
 ## 📚 Usage Examples
 
-### Task Assignment Modes
+### **Software Development Tasks**
 
-#### 🤖 AI-Assisted Mode
-For complex tasks that benefit from intelligent processing:
 ```bash
-./bin/deploy -ai -task "Design and implement user authentication system" -pane %1
-```
-**Features:**
-- Intelligent task analysis and breakdown
-- Automatic sub-task identification
-- Context-aware implementation strategies
-- Enhanced error handling and reporting
+# Full-stack application development
+./bin/ccs --task "Create a REST API with authentication, user management, and a React frontend"
 
-#### 🎯 Simple Mode  
-For straightforward, direct task assignments:
-```bash
-./bin/deploy -simple -task "Run unit tests and fix failures" -pane %2
-```
-**Features:**
-- Direct task execution
-- Minimal processing overhead
-- Quick task assignment
-- Basic status reporting
+# Code refactoring and optimization  
+./bin/ccs --task "Refactor the existing codebase for better maintainability and add comprehensive tests"
 
-### Team Collaboration Workflow
-```bash
-# 1. Start a new project session
-storm new web-app-project
-
-# 2. Setup Claude Company environment
-./bin/deploy
-
-# 3. Assign backend development (AI mode)
-./bin/deploy -ai -task "Create REST API with authentication" -pane %1
-
-# 4. Assign frontend development (AI mode)
-./bin/deploy -ai -task "Build React components for user dashboard" -pane %2
-
-# 5. Assign testing tasks (Simple mode)
-./bin/deploy -simple -task "Write integration tests" -pane %3
-
-# 6. Monitor progress - check pane output
-tmux capture-pane -t %1 -p | tail -10
+# Bug fixing and enhancement
+./bin/ccs --task "Fix all build errors and add logging functionality throughout the application"
 ```
 
-### Session Management
-```bash
-# List active sessions
-storm list
+### **Project Management Tasks**
 
-# Kill specific session
-storm kill session-name
+```bash
+# Architecture design
+./bin/ccs --task "Design a microservices architecture for the e-commerce platform and implement the user service"
+
+# Documentation creation
+./bin/ccs --task "Create comprehensive API documentation and add inline code comments"
+
+# Performance optimization
+./bin/ccs --task "Profile the application, identify bottlenecks, and implement performance improvements"
 ```
 
 ## 🛠️ Command Reference
 
-### Storm Command (Session Manager)
-```bash
-# List all sessions
-storm list
-storm ls
-
-# Create new session
-storm new <session-name>
-
-# Attach to session
-storm attach <session-name>
-storm a <session-name>
-
-# Kill session
-storm kill <session-name>
-storm k <session-name>
-
-# Show help
-storm help
-```
-
-### Deploy Command (AI Task Manager)
+### **Main Commands**
 ```bash
 # Setup tmux session (default behavior)
-./bin/deploy
+./bin/ccs
+./bin/ccs --setup
 
-# AI-assisted task assignment
-./bin/deploy -ai -task "TASK_DESCRIPTION" -pane PANE_ID
-
-# Simple task assignment  
-./bin/deploy -simple -task "TASK_DESCRIPTION" -pane PANE_ID
-
-# Setup session explicitly
-./bin/deploy -setup
+# Assign task to AI team
+./bin/ccs --task "TASK_DESCRIPTION"
 ```
 
-### Parameters
-- `-ai`: Enable AI-assisted mode (default if no mode specified)
-- `-simple`: Enable simple mode
-- `-task`: Task description (required for assignments)
-- `-pane`: Target pane ID (required for assignments)
-- `-setup`: Explicitly setup tmux session
-
-### Pane ID Format
-Use tmux pane IDs like `%1`, `%2`, `%3`, etc. You can find these with:
+### **STORM Session Management**
 ```bash
-tmux list-panes -s -t claude-squad -F '#{pane_id}'
+# List all sessions
+./bin/storm list     # or 'ls'
+
+# Create new session  
+./bin/storm new <session-name>
+
+# Attach to session
+./bin/storm attach <session-name>  # or 'a'
+
+# Kill session
+./bin/storm kill <session-name>    # or 'k'
+
+# Switch between sessions
+./bin/storm switch <session-name>  # or 's'
+
+# Rename session
+./bin/storm rename <old-name> <new-name>  # or 'r'
 ```
 
-## 🛠️ System Requirements
+## 🎯 How It Works
 
+### **Manager AI Responsibilities**
+- ❌ **Never writes code directly**  
+- ✅ **Analyzes and breaks down tasks**
+- ✅ **Creates and manages worker panes**
+- ✅ **Assigns specific subtasks to workers**
+- ✅ **Reviews completed work for quality**
+- ✅ **Coordinates testing and integration**
+- ✅ **Provides final approval and completion**
+
+### **Worker AI Responsibilities**  
+- ✅ **Implements assigned subtasks**
+- ✅ **Writes actual code and creates files**
+- ✅ **Reports completion with deliverables**
+- ✅ **Responds to feedback and revision requests**
+- ✅ **Fixes issues identified during review**
+
+### **Communication Protocol**
+```bash
+# Worker → Manager reporting format
+"実装完了：internal/auth/jwt.go - JWT token generation and validation implemented"
+
+# Manager → Worker task assignment format  
+"サブタスク: Create user authentication middleware in internal/auth/middleware.go. Include JWT validation and error handling. Report completion when done."
+
+# Manager → Worker review requests
+"レビュー要請: Please review internal/auth/jwt.go for code quality, security best practices, and integration compatibility."
+```
+
+## 🔧 Installation & Setup
+
+### **System Requirements**
 - **Go 1.21+** for building from source
-- **tmux** - Required for session management
-- **Unix-like OS** - Linux, macOS, or WSL on Windows
-- **Shell support** - bash, zsh, fish, or compatible shells
+- **tmux** - Required for pane management
+- **Claude AI access** - Via Claude CLI tool
+- **Unix-like OS** - Linux, macOS, or WSL
 
-## 🏗️ Development
+### **Step-by-Step Installation**
 
-### Build from Source
+1. **Install Dependencies**
 ```bash
-# Clone the repository
+# macOS
+brew install tmux go
+
+# Ubuntu/Debian  
+sudo apt install tmux golang-go
+
+# Install Claude CLI (follow official docs)
+```
+
+2. **Build Claude Company**
+```bash
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
-
-# Install dependencies
 go mod tidy
-
-# Build all binaries
-make build
-
-# Run tests
-make test
-
-# Clean build artifacts
-make clean
+go build -o bin/ccs
 ```
 
-### Project Structure
-```
-claude-company/
-├── cmd/
-│   └── ccs/           # Storm command implementation (tmux session manager)
-│       └── main.go
-├── bin/               # Built binaries (storm, deploy)
-├── main.go           # Deploy command implementation (AI task manager)
-├── ccs.go            # Storm core logic
-├── Makefile          # Build configuration
-├── install.sh        # Installation script
-├── go.mod            # Go module definition
-└── README.md         # This file
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how to get started:
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** with tests
-4. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-5. **Push to the branch** (`git push origin feature/amazing-feature`)
-6. **Open a Pull Request**
-
-### Development Guidelines
-- Follow Go conventions and best practices
-- Add tests for new functionality
-- Update documentation for API changes
-- Ensure cross-shell compatibility
-
-## 📋 Roadmap
-
-- [ ] Web UI for session management
-- [ ] Plugin system for custom task types
-- [ ] Integration with more AI providers
-- [ ] Docker containerization
-- [ ] Configuration file support
-- [ ] Team analytics and reporting
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Q: `tmux: command not found`**
+3. **Setup PATH (optional)**
 ```bash
-# Install tmux on your system
-# macOS: brew install tmux
-# Ubuntu: sudo apt install tmux  
-# CentOS: sudo yum install tmux
-```
-
-**Q: Commands not found after installation**
-```bash
-# Ensure ~/bin is in your PATH
-echo $PATH | grep "$HOME/bin"
-
-# If not found, add to your shell config
+cp bin/ccs ~/bin/ccs
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-**Q: Permission denied errors**
+## 🎭 Real-World Example
+
+Let's say you want to add a user authentication system:
+
 ```bash
-# Make binaries executable
-chmod +x ~/bin/storm ~/bin/deploy
+./bin/ccs --task "Add JWT-based user authentication with registration, login, and protected routes"
+```
+
+**What happens automatically:**
+
+1. **Manager Analysis** (Parent Pane):
+   - "I need to break this into: user models, JWT service, auth middleware, registration endpoint, login endpoint, and tests"
+
+2. **Worker Creation & Assignment**:
+   - Creates 3 child panes
+   - Assigns backend work to Worker #1
+   - Assigns testing to Worker #2  
+   - Assigns integration to Worker #3
+
+3. **Parallel Implementation**:
+   - Worker #1: Creates user models, JWT functions, endpoints
+   - Worker #2: Writes unit tests and integration tests
+   - Worker #3: Sets up middleware and route protection
+
+4. **Quality Control**:
+   - Manager reviews each component
+   - Requests modifications if needed
+   - Coordinates final integration testing
+
+5. **Completion**:
+   - All code is working and tested
+   - Build passes successfully
+   - Features are ready to use
+
+## 🚨 Troubleshooting
+
+### **Common Issues**
+
+**❌ "tmux: command not found"**
+```bash
+# Install tmux first
+brew install tmux      # macOS
+sudo apt install tmux  # Ubuntu
+```
+
+**❌ "claude: command not found"**
+```bash
+# Install Claude CLI following official documentation
+# Ensure it's available in your PATH
+```
+
+**❌ Panes not responding**
+```bash
+# Check if Claude is running in each pane
+tmux list-panes -s -t claude-squad -F '#{pane_id}: #{pane_current_command}'
+
+# Restart session if needed
+./bin/ccs --setup
+```
+
+**❌ Tasks not being distributed**
+```bash
+# Ensure at least 2 panes exist for manager/worker separation
+# Manager needs worker panes to delegate tasks to
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
+
+### **Development Setup**
+```bash
+git clone https://github.com/yourusername/claude-company.git
+cd claude-company
+go mod tidy
+go build -o bin/ccs
+./bin/ccs --task "Help improve this project"  # Meta! 😄
 ```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- Inspired by modern DevOps collaboration workflows
-- Built for seamless integration with Claude AI
-- Community-driven development approach
+- **Claude AI** for making intelligent collaboration possible
+- **tmux** for robust terminal multiplexing
+- **Go community** for excellent tooling and libraries
 
 ---
 
-**Made with ❤️ for developer productivity and AI-human collaboration**
+**Transform your development workflow with AI-powered team collaboration** 🚀
 
-For more examples and advanced usage, check out our [Wiki](https://github.com/yourusername/claude-company/wiki).
+*Made with ❤️ for developers who want to work with AI, not just use it*

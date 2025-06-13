@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
+	"claude-company/internal/session"
 )
 
 func main() {
@@ -49,6 +49,12 @@ func main() {
 		switchSession(os.Args[2])
 	case "help", "-h", "--help":
 		printUsage()
+	case "ccs":
+		if len(os.Args) < 3 {
+			printUsage()
+			return
+		}
+		handleCCSCommand(os.Args[2:])
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		printUsage()
@@ -66,16 +72,19 @@ func printUsage() {
 	fmt.Println("  storm kill <session-name>             Terminate session")
 	fmt.Println("  storm rename <old-name> <new-name>    Rename session")
 	fmt.Println("  storm switch <session-name>           Switch to session")
+	fmt.Println("  storm ccs <command>                   Basic tmux session management")
 	fmt.Println("  storm help                            Show this help")
 	fmt.Println()
 	fmt.Println("⚡ Aliases:")
 	fmt.Println("  ls  → list     a  → attach     k  → kill")
 	fmt.Println("  r   → rename   s  → switch")
+	fmt.Println()
+	fmt.Println("💡 For basic tmux functionality, use: storm ccs help")
 }
 
 func listSessions() {
-	cmd := exec.Command("tmux", "list-sessions")
-	output, err := cmd.Output()
+	sessionManager := session.NewTmuxSessionManager()
+	sessions, err := sessionManager.ListSessions()
 	if err != nil {
 		if strings.Contains(err.Error(), "no server running") {
 			fmt.Println("No tmux sessions running")
@@ -85,26 +94,25 @@ func listSessions() {
 		return
 	}
 	
-	if len(output) == 0 {
+	if len(sessions) == 0 {
 		fmt.Println("No tmux sessions running")
 		return
 	}
 	
-	sessions := strings.Split(strings.TrimSpace(string(output)), "\n")
 	fmt.Printf("Active tmux sessions (%d):\n", len(sessions))
-	for i, session := range sessions {
-		fmt.Printf("  %d. %s\n", i+1, session)
+	for i, sessionName := range sessions {
+		fmt.Printf("  %d. %s\n", i+1, sessionName)
 	}
 }
 
 func createSession(sessionName string) {
-	if sessionExists(sessionName) {
+	sessionManager := session.NewTmuxSessionManager()
+	if sessionManager.SessionExists(sessionName) {
 		fmt.Printf("Session '%s' already exists\n", sessionName)
 		return
 	}
 	
-	cmd := exec.Command("tmux", "new-session", "-d", "-s", sessionName)
-	err := cmd.Run()
+	err := sessionManager.CreateSession(sessionName)
 	if err != nil {
 		fmt.Printf("Error creating session '%s': %v\n", sessionName, err)
 		return
@@ -113,17 +121,13 @@ func createSession(sessionName string) {
 }
 
 func attachSession(sessionName string) {
-	if !sessionExists(sessionName) {
+	sessionManager := session.NewTmuxSessionManager()
+	if !sessionManager.SessionExists(sessionName) {
 		fmt.Printf("Session '%s' does not exist\n", sessionName)
 		return
 	}
 	
-	cmd := exec.Command("tmux", "attach-session", "-t", sessionName)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	
-	err := cmd.Run()
+	err := sessionManager.AttachSession(sessionName)
 	if err != nil {
 		fmt.Printf("Error attaching to session '%s': %v\n", sessionName, err)
 		return
@@ -131,13 +135,13 @@ func attachSession(sessionName string) {
 }
 
 func killSession(sessionName string) {
-	if !sessionExists(sessionName) {
+	sessionManager := session.NewTmuxSessionManager()
+	if !sessionManager.SessionExists(sessionName) {
 		fmt.Printf("Session '%s' does not exist\n", sessionName)
 		return
 	}
 	
-	cmd := exec.Command("tmux", "kill-session", "-t", sessionName)
-	err := cmd.Run()
+	err := sessionManager.KillSession(sessionName)
 	if err != nil {
 		fmt.Printf("Error killing session '%s': %v\n", sessionName, err)
 		return
@@ -146,18 +150,18 @@ func killSession(sessionName string) {
 }
 
 func renameSession(oldName, newName string) {
-	if !sessionExists(oldName) {
+	sessionManager := session.NewTmuxSessionManager()
+	if !sessionManager.SessionExists(oldName) {
 		fmt.Printf("Session '%s' does not exist\n", oldName)
 		return
 	}
 	
-	if sessionExists(newName) {
+	if sessionManager.SessionExists(newName) {
 		fmt.Printf("Session '%s' already exists\n", newName)
 		return
 	}
 	
-	cmd := exec.Command("tmux", "rename-session", "-t", oldName, newName)
-	err := cmd.Run()
+	err := sessionManager.RenameSession(oldName, newName)
 	if err != nil {
 		fmt.Printf("Error renaming session '%s' to '%s': %v\n", oldName, newName, err)
 		return
@@ -166,13 +170,13 @@ func renameSession(oldName, newName string) {
 }
 
 func switchSession(sessionName string) {
-	if !sessionExists(sessionName) {
+	sessionManager := session.NewTmuxSessionManager()
+	if !sessionManager.SessionExists(sessionName) {
 		fmt.Printf("Session '%s' does not exist\n", sessionName)
 		return
 	}
 	
-	cmd := exec.Command("tmux", "switch-client", "-t", sessionName)
-	err := cmd.Run()
+	err := sessionManager.SwitchSession(sessionName)
 	if err != nil {
 		fmt.Printf("Error switching to session '%s': %v\n", sessionName, err)
 		return
@@ -181,7 +185,109 @@ func switchSession(sessionName string) {
 }
 
 func sessionExists(sessionName string) bool {
-	cmd := exec.Command("tmux", "has-session", "-t", sessionName)
-	err := cmd.Run()
-	return err == nil
+	sessionManager := session.NewTmuxSessionManager()
+	return sessionManager.SessionExists(sessionName)
+}
+
+func handleCCSCommand(args []string) {
+	if len(args) < 1 {
+		printCCSUsage()
+		return
+	}
+
+	command := args[0]
+	switch command {
+	case "list", "ls":
+		listSessionsBasic()
+	case "new", "create":
+		if len(args) < 2 {
+			fmt.Println("Usage: ccs new <session-name>")
+			return
+		}
+		createSessionBasic(args[1])
+	case "attach", "a":
+		if len(args) < 2 {
+			fmt.Println("Usage: ccs attach <session-name>")
+			return
+		}
+		attachSessionBasic(args[1])
+	case "kill", "k":
+		if len(args) < 2 {
+			fmt.Println("Usage: ccs kill <session-name>")
+			return
+		}
+		killSessionBasic(args[1])
+	case "help", "-h", "--help":
+		printCCSUsage()
+	default:
+		fmt.Printf("Unknown ccs command: %s\n", command)
+		printCCSUsage()
+	}
+}
+
+func printCCSUsage() {
+	fmt.Println("ccs - tmux session management tool")
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("  storm ccs list                    List all tmux sessions")
+	fmt.Println("  storm ccs new <session-name>      Create new tmux session")
+	fmt.Println("  storm ccs attach <session-name>   Attach to existing session")
+	fmt.Println("  storm ccs kill <session-name>     Kill tmux session")
+	fmt.Println("  storm ccs help                    Show this help message")
+	fmt.Println()
+	fmt.Println("Aliases:")
+	fmt.Println("  ls  -> list")
+	fmt.Println("  a   -> attach")
+	fmt.Println("  k   -> kill")
+}
+
+func listSessionsBasic() {
+	sessionManager := session.NewTmuxSessionManager()
+	sessions, err := sessionManager.ListSessions()
+	if err != nil {
+		if strings.Contains(err.Error(), "no server running") {
+			fmt.Println("No tmux sessions running")
+			return
+		}
+		fmt.Printf("Error listing sessions: %v\n", err)
+		return
+	}
+	
+	if len(sessions) == 0 {
+		fmt.Println("No tmux sessions running")
+		return
+	}
+	
+	for _, sessionName := range sessions {
+		fmt.Println(sessionName)
+	}
+}
+
+func createSessionBasic(sessionName string) {
+	sessionManager := session.NewTmuxSessionManager()
+	err := sessionManager.CreateSession(sessionName)
+	if err != nil {
+		fmt.Printf("Error creating session '%s': %v\n", sessionName, err)
+		return
+	}
+	fmt.Printf("Created session: %s\n", sessionName)
+}
+
+func attachSessionBasic(sessionName string) {
+	sessionManager := session.NewTmuxSessionManager()
+	err := sessionManager.AttachSession(sessionName)
+	if err != nil {
+		fmt.Printf("Error attaching to session '%s': %v\n", sessionName, err)
+		return
+	}
+}
+
+func killSessionBasic(sessionName string) {
+	sessionManager := session.NewTmuxSessionManager()
+	err := sessionManager.KillSession(sessionName)
+	if err != nil {
+		fmt.Printf("Error killing session '%s': %v\n", sessionName, err)
+		return
+	}
+	fmt.Printf("Killed session: %s\n", sessionName)
 }
