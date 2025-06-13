@@ -223,32 +223,125 @@ source ~/.bashrc
 
 ## 🗄️ Database Setup & Configuration
 
-### **1. Docker Compose Database Startup**
+### **Prerequisites**
 
-Start the PostgreSQL database and pgAdmin interface:
+Before starting, ensure you have the following installed:
 
 ```bash
-# Start database services in background
+# Check Docker version (minimum required: 20.10+)
+docker --version
+
+# Check Docker Compose version (minimum required: 2.0+)
+docker-compose --version
+
+# Verify Docker daemon is running
+docker info
+```
+
+**Required versions:**
+- **Docker**: 20.10.0 or higher
+- **Docker Compose**: 2.0.0 or higher
+- **Available ports**: 5432 (PostgreSQL), 8080 (pgAdmin)
+
+### **Database Configuration**
+
+This project uses PostgreSQL as the database backend:
+
+**🟢 PostgreSQL**
+- Advanced JSON support and complex queries
+- Better performance for analytical workloads
+- Includes pgAdmin web interface
+- Default choice for Claude Company features
+
+### **1. Initial Setup Process**
+
+#### **Step 1: Environment Configuration**
+
+Create environment file for database settings:
+
+```bash
+# Create .env file in project root
+cat > .env << 'EOF'
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=claude_user
+DB_PASSWORD=claude_password
+DB_NAME=claude_company
+DB_SSLMODE=disable
+
+# API Server Configuration
+PORT=8081
+GIN_MODE=release
+
+# Optional: Choose database type (postgres/mysql)
+DB_TYPE=postgres
+EOF
+```
+
+#### **Step 2: Start Database Services**
+
+```bash
+# Start all database services in background
 docker-compose up -d
 
-# View service status
+# Start PostgreSQL services
+docker-compose up -d postgres pgadmin
+```
+
+#### **Step 3: Verify Service Status**
+
+```bash
+# Check all services status
 docker-compose ps
 
-# View logs
-docker-compose logs postgres
-docker-compose logs pgadmin
+# Expected output:
+# NAME                     IMAGE               STATUS
+# claude-company-db        postgres:15-alpine  Up (healthy)
+# claude-company-pgadmin   dpage/pgadmin4      Up
 ```
 
 **Services Started:**
 - **PostgreSQL Database**: `localhost:5432`
 - **pgAdmin Web Interface**: `http://localhost:8080`
 
-### **2. Environment Variables**
+### **2. Connection Verification & Testing**
+
+#### **Step 4: Verify Database Connection**
+
+**PostgreSQL Connection Test:**
+```bash
+# Wait for services to be fully ready (may take 30-60 seconds)
+docker-compose logs postgres | grep "ready to accept connections"
+
+# Test connection using docker exec
+docker exec claude-company-db psql -U claude_user -d claude_company -c "SELECT version();"
+
+# Test connection from host machine (requires psql client)
+PGPASSWORD=claude_password psql -h localhost -p 5432 -U claude_user -d claude_company -c "\\dt"
+```
+
+
+#### **Step 5: Access Web Interfaces**
+
+**pgAdmin (PostgreSQL Management):**
+1. Open `http://localhost:8080` in your browser
+2. Login credentials:
+   - **Email**: `admin@claude-company.local`
+   - **Password**: `admin123`
+3. Add server connection:
+   - **Host**: `postgres` (Docker service name)
+   - **Port**: `5432`
+   - **Username**: `claude_user`
+   - **Password**: `claude_password`
+
+
+### **3. Environment Variables Reference**
 
 Configure database connection settings:
 
 ```bash
-# Required environment variables
+# Required environment variables for PostgreSQL
 export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USER=claude_user
@@ -256,39 +349,202 @@ export DB_PASSWORD=claude_password
 export DB_NAME=claude_company
 export DB_SSLMODE=disable
 
-# Optional API server settings
+
+# API server settings
 export PORT=8081
 export GIN_MODE=release
 ```
 
-**Or create a `.env` file:**
+**Environment file (.env) template:**
 ```bash
+# PostgreSQL Configuration (default)
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=claude_user
 DB_PASSWORD=claude_password
 DB_NAME=claude_company
 DB_SSLMODE=disable
+
+
+# API Configuration
 PORT=8081
+GIN_MODE=release
+
+# Development settings
+DB_TYPE=postgres
 ```
 
-### **3. Database Initialization**
+### **4. Database Schema & Initialization**
 
-The database schema is automatically initialized when starting the PostgreSQL container. The initialization includes:
+The database schema is automatically initialized when starting the containers. The initialization includes:
 
-- **Task tables** with hierarchical structure
-- **Progress tracking** tables
+- **Task tables** with hierarchical structure and ULID primary keys
+- **Progress tracking** tables for real-time monitoring
 - **Indexes** for performance optimization
-- **Functions** for task hierarchy management
-- **Sample data** for testing
+- **Functions** for task hierarchy management and calculations
+- **Sample data** for testing and demonstration
 
-**Manual initialization (if needed):**
+**Automatic Initialization Process:**
 ```bash
-# Connect to database
-psql -h localhost -p 5432 -U claude_user -d claude_company
+# Schema files are automatically executed on first startup
+# Location: ./db/init/01_schema.sql and ./db/init/02_sample_data.sql
 
-# Or use pgAdmin at http://localhost:8080
-# Login: admin@claude-company.local / admin123
+# Check initialization logs
+docker-compose logs postgres | grep -i "database system is ready"
+```
+
+**Manual schema inspection:**
+```bash
+# PostgreSQL - View table structure
+docker exec claude-company-db psql -U claude_user -d claude_company -c "\\dt"
+
+# PostgreSQL - Check specific table details
+docker exec claude-company-db psql -U claude_user -d claude_company -c "\\d tasks"
+
+```
+
+### **5. Development Environment Configuration**
+
+#### **Recommended Development Settings**
+
+For development work, use these optimized settings:
+
+```bash
+# Development .env configuration
+cat > .env << 'EOF'
+# Database (Development optimized)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=claude_user
+DB_PASSWORD=claude_password
+DB_NAME=claude_company_dev
+DB_SSLMODE=disable
+DB_MAX_CONNECTIONS=20
+DB_IDLE_TIMEOUT=300
+
+# API Server (Development mode)
+PORT=8081
+GIN_MODE=debug
+LOG_LEVEL=debug
+ENABLE_CORS=true
+
+# Development features
+AUTO_MIGRATE=true
+SEED_DATABASE=true
+EOF
+```
+
+#### **Performance Tuning for Development**
+
+```bash
+# PostgreSQL development optimizations
+docker exec claude-company-db psql -U claude_user -d claude_company -c "
+  -- Increase work memory for complex queries
+  ALTER SYSTEM SET work_mem = '64MB';
+  
+  -- Enable query logging for debugging
+  ALTER SYSTEM SET log_statement = 'all';
+  ALTER SYSTEM SET log_min_duration_statement = 1000;
+  
+  -- Reload configuration
+  SELECT pg_reload_conf();
+"
+```
+
+### **6. Troubleshooting Common Issues**
+
+#### **🔴 Database Connection Issues**
+
+**Problem**: "Connection refused" errors
+```bash
+# Solution 1: Check if containers are running
+docker-compose ps
+
+# Solution 2: Verify port availability
+netstat -tulpn | grep :5432
+
+# Solution 3: Restart services with clean state
+docker-compose down -v && docker-compose up -d
+```
+
+**Problem**: "Password authentication failed"
+```bash
+# Solution: Reset database container
+docker-compose down
+docker volume rm claude-company_postgres_data
+docker-compose up -d postgres
+```
+
+#### **🔴 Docker Issues**
+
+**Problem**: "Port already in use"
+```bash
+# Find process using the port
+lsof -i :5432
+
+# Kill the process or change port in docker-compose.yml
+# Example: Change "5432:5432" to "5433:5432"
+```
+
+**Problem**: "Volume mount failed"
+```bash
+# Ensure Docker has permission to access project directory
+# On macOS: Docker Desktop > Settings > Resources > File Sharing
+# On Linux: Check SELinux/AppArmor permissions
+```
+
+#### **🔴 Performance Issues**
+
+**Problem**: Slow database queries
+```bash
+# Check database stats
+docker exec claude-company-db psql -U claude_user -d claude_company -c "
+  SELECT schemaname, tablename, attname, n_distinct, correlation 
+  FROM pg_stats WHERE tablename = 'tasks';
+"
+
+# Analyze query performance
+docker exec claude-company-db psql -U claude_user -d claude_company -c "
+  EXPLAIN ANALYZE SELECT * FROM tasks WHERE status = 'pending';
+"
+```
+
+#### **🔴 Web Interface Issues**
+
+**Problem**: Cannot access pgAdmin
+```bash
+# Check container logs
+docker-compose logs pgadmin
+
+# Verify correct URL and ports
+echo "pgAdmin: http://localhost:8080"
+
+# Clear browser cache and try again
+```
+
+### **7. Quick Health Check Commands**
+
+```bash
+# Complete system health check
+#!/bin/bash
+echo "=== Claude Company Database Health Check ==="
+
+# Check Docker
+echo "Docker version: $(docker --version)"
+
+# Check containers
+echo -e "\nContainer status:"
+docker-compose ps
+
+# Check database connectivity
+echo -e "\nDatabase connectivity:"
+docker exec claude-company-db psql -U claude_user -d claude_company -c "SELECT 'PostgreSQL Connected' as status;"
+
+# Check web interfaces
+echo -e "\nWeb interface availability:"
+curl -s -o /dev/null -w "pgAdmin: %{http_code}\n" http://localhost:8080
+
+echo -e "\nSetup complete! ✅"
 ```
 
 ## 🌐 API Usage Guide

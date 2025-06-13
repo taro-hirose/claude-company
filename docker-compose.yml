@@ -33,40 +33,5 @@ services:
       postgres:
         condition: service_healthy
 
-  mysql:
-    image: mysql:8.0
-    container_name: claude-company-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: todo_app
-      MYSQL_USER: todo_user
-      MYSQL_PASSWORD: todo_password
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: claude-company-phpmyadmin
-    restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_USER: todo_user
-      PMA_PASSWORD: todo_password
-    ports:
-      - "8081:80"
-    depends_on:
-      mysql:
-        condition: service_healthy
-
 volumes:
   postgres_data:
-  mysql_data:
