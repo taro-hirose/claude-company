@@ -19,31 +19,31 @@ func main() {
 		listSessions()
 	case "new", "create":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: ccs new <session-name>")
+			fmt.Println("Usage: storm new <session-name>")
 			return
 		}
 		createSession(os.Args[2])
 	case "attach", "a":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: ccs attach <session-name>")
+			fmt.Println("Usage: storm attach <session-name>")
 			return
 		}
 		attachSession(os.Args[2])
 	case "kill", "k":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: ccs kill <session-name>")
+			fmt.Println("Usage: storm kill <session-name>")
 			return
 		}
 		killSession(os.Args[2])
 	case "rename", "r":
 		if len(os.Args) < 4 {
-			fmt.Println("Usage: ccs rename <old-session-name> <new-session-name>")
+			fmt.Println("Usage: storm rename <old-session-name> <new-session-name>")
 			return
 		}
 		renameSession(os.Args[2], os.Args[3])
 	case "switch", "s":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: ccs switch <session-name>")
+			fmt.Println("Usage: storm switch <session-name>")
 			return
 		}
 		switchSession(os.Args[2])
@@ -56,23 +56,21 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println("ccs - tmux session management tool")
+	fmt.Println("🌪️  STORM - Claude Company Session Manager")
+	fmt.Println("    Lightning-fast tmux session management")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  ccs list                              List all tmux sessions")
-	fmt.Println("  ccs new <session-name>                Create new tmux session")
-	fmt.Println("  ccs attach <session-name>             Attach to existing session")
-	fmt.Println("  ccs kill <session-name>               Kill tmux session")
-	fmt.Println("  ccs rename <old-name> <new-name>      Rename session")
-	fmt.Println("  ccs switch <session-name>             Switch to session")
-	fmt.Println("  ccs help                              Show this help message")
+	fmt.Println("  storm list                            List all active sessions")
+	fmt.Println("  storm new <session-name>              Create new session")
+	fmt.Println("  storm attach <session-name>           Attach to session")
+	fmt.Println("  storm kill <session-name>             Terminate session")
+	fmt.Println("  storm rename <old-name> <new-name>    Rename session")
+	fmt.Println("  storm switch <session-name>           Switch to session")
+	fmt.Println("  storm help                            Show this help")
 	fmt.Println()
-	fmt.Println("Aliases:")
-	fmt.Println("  ls  -> list")
-	fmt.Println("  a   -> attach")
-	fmt.Println("  k   -> kill")
-	fmt.Println("  r   -> rename")
-	fmt.Println("  s   -> switch")
+	fmt.Println("⚡ Aliases:")
+	fmt.Println("  ls  → list     a  → attach     k  → kill")
+	fmt.Println("  r   → rename   s  → switch")
 }
 
 func listSessions() {
