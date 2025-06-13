@@ -3,20 +3,40 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"os/exec"
+	"bytes"
+	"time"
 	"claude-company/internal/models"
 	"claude-company/internal/session"
+	"claude-company/internal/api"
 )
 
 type AIManager struct {
 	sessionManager *session.Manager
 	taskTracker    *models.TaskTracker
+	taskService    *api.TaskService
+	parentPanes    map[string]bool  // Track parent panes to prevent task assignment
 }
 
 func NewAIManager(sessionManager *session.Manager, mainTask models.Task, managerPane string) *AIManager {
-	return &AIManager{
+	manager := &AIManager{
 		sessionManager: sessionManager,
 		taskTracker:    models.NewTaskTracker(mainTask, managerPane),
+		taskService:    api.NewTaskService(sessionManager),
+		parentPanes:    make(map[string]bool),
 	}
+	
+	// Initialize parent panes with manager pane and initial Claude pane
+	manager.parentPanes[managerPane] = true
+	
+	// Get initial panes and mark them as parents (deprecated, using session manager now)
+	if panes, err := sessionManager.GetPanes(); err == nil {
+		for _, pane := range panes {
+			manager.parentPanes[pane] = true
+		}
+	}
+	
+	return manager
 }
 
 func (m *AIManager) SendManagerPrompt(claudePane string) error {
@@ -33,8 +53,26 @@ func (m *AIManager) buildManagerPrompt() string {
 
 	return fmt.Sprintf(`あなたは%s（プロジェクトマネージャー）です。
 
-⚠️ 重要な制約 ⚠️
-あなたは絶対にコードを書いたり、ファイルを直接編集してはいけません。すべての実装作業は子ペインに委託してください。
+🔐 **絶対的な役割制限** 🔐
+以下の作業は一切禁止されています：
+- コードの記述・編集
+- ファイルの直接操作
+- ビルド・テストの実行
+- デプロイ作業
+- 技術実装
+
+✅ **許可されている役割** ✅
+- タスクの分析・分解
+- サブタスクの割り当て
+- 進捗管理・監視
+- 品質管理・レビュー指示
+- 統合管理・完了判定
+
+⚠️ 強化された制約 ⚠️
+1. 実装関連のタスクが誤って親ペインに送られた場合、自動的に子ペインにリダイレクトされます
+2. 親ペインではマネージメント・レビュー・品質管理のみ実行可能です
+3. 子ペインでは実装・検証・テストのみ実行可能です
+4. この役割分担は技術的に強制されており、違反は防止されます
 
 ==== メインタスク ====
 %s
@@ -91,7 +129,11 @@ tmux send-keys -t %s 'サブタスク: internal/models/user.goファイルを作
 4. 定期的に進捗を確認し、レビュー・品質管理を実施
 5. 全体の統合・完了判定を行う
 
-⚠️ 再度強調：あなたは実装作業を一切行わず、マネジメント・監督・レビューのみに専念してください。
+🚨 **システム強制による役割分担** 🚨
+- 実装タスクは自動的に子ペインに割り当てられます
+- マネージメントタスクは親ペインでのみ実行されます
+- この制限はコードレベルで強制されており、迂回不可能です
+- 違反を試みるとエラーが発生し、適切なペインにリダイレクトされます
 
 ==== 作業状況報告フォーマット ====
 子ペインからの報告は以下の形式で受け取ります：
@@ -105,8 +147,18 @@ tmux send-keys -t %s 'サブタスク: internal/models/user.goファイルを作
 		claudePane, claudePane, claudePane, claudePane)
 }
 
-func (m *AIManager) AddSubTask(description, assignedPane string) models.SubTask {
-	return m.taskTracker.AddSubTask(description, assignedPane)
+func (m *AIManager) AddSubTask(description, assignedPane string) (models.SubTask, error) {
+	// 役割ベースのタスク割り当てを強制
+	correctedPane, err := m.taskTracker.EnforceRoleBasedTaskAssignment(description, assignedPane)
+	if err != nil {
+		return models.SubTask{}, err
+	}
+	
+	if correctedPane != assignedPane {
+		fmt.Printf("⚠️ タスク '%s' のペインを %s から %s にリダイレクトしました\n", description, assignedPane, correctedPane)
+	}
+	
+	return m.taskTracker.AddSubTask(description, correctedPane), nil
 }
 
 func (m *AIManager) UpdateTaskStatus(subTaskID string, status models.TaskStatus, result string) bool {
@@ -114,13 +166,27 @@ func (m *AIManager) UpdateTaskStatus(subTaskID string, status models.TaskStatus,
 }
 
 func (m *AIManager) SendProgressCheck(paneID string) error {
+	// 親ペインからの進捗確認は許可
+	if paneID == m.taskTracker.ManagerPane {
+		return fmt.Errorf("マネージャーペイン %s に進捗確認を送信することはできません。子ペインのみ監視対象です", paneID)
+	}
+	
 	checkMessage := fmt.Sprintf("進捗確認: 現在の作業状況を報告してください。完了した場合は「実装完了：[詳細]」、進行中の場合は「進捗報告：[状況]」で回答してください。")
 	return m.sessionManager.SendToPane(paneID, checkMessage)
 }
 
 func (m *AIManager) SendReviewRequest(paneID, filePath string) error {
+	// レビューは親ペインの役割
+	if paneID != m.taskTracker.ManagerPane {
+		return fmt.Errorf("レビュー要請は親ペイン %s からのみ送信可能です。現在のペイン: %s", m.taskTracker.ManagerPane, paneID)
+	}
+	
 	reviewMessage := fmt.Sprintf("レビュー要請: %s が完成したとのことですが、以下を確認して報告してください：1. ビルドエラーがないか、2. コードの品質、3. 設計の一貫性。問題があれば具体的な修正指示をお願いします。", filePath)
-	return m.sessionManager.SendToPane(paneID, reviewMessage)
+	// レビューは子ペインに送信
+	if len(m.taskTracker.AssignedPanes) > 0 {
+		return m.sessionManager.SendToPane(m.taskTracker.AssignedPanes[0], reviewMessage)
+	}
+	return fmt.Errorf("レビュー対象の子ペインが見つかりません")
 }
 
 func (m *AIManager) SendIntegrationTest() error {
@@ -146,4 +212,218 @@ func (m *AIManager) GetTaskSummary() string {
 	summary.WriteString(fmt.Sprintf("全タスク完了: %t\n", m.taskTracker.AllTasksCompleted()))
 	
 	return summary.String()
+}
+
+// detectNewPane creates a new pane and returns its ID directly using tmux -P -F option
+func (m *AIManager) detectNewPane(paneCreationCommand string) (string, error) {
+	// Debug: Log the command being executed
+	fmt.Printf("🔍 Executing pane creation command: %s\n", paneCreationCommand)
+	
+	// Execute the pane creation command and capture the new pane ID
+	cmd := exec.Command("bash", "-c", paneCreationCommand)
+	
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to create pane: %v\nstderr: %s", err, stderr.String())
+	}
+	
+	// Get the new pane ID from stdout
+	newPaneID := strings.TrimSpace(stdout.String())
+	
+	// Debug: Log the received pane ID
+	fmt.Printf("✅ New pane created with ID: %s\n", newPaneID)
+	
+	// Validate the pane ID format
+	if !strings.HasPrefix(newPaneID, "%") {
+		return "", fmt.Errorf("invalid pane ID format: %s", newPaneID)
+	}
+	
+	// Add the new pane to tracking if it's not a parent pane
+	if !m.isParentPane(newPaneID) {
+		// Track this as a child pane
+		m.taskTracker.AssignedPanes = append(m.taskTracker.AssignedPanes, newPaneID)
+		fmt.Printf("📝 Tracked new child pane: %s\n", newPaneID)
+	} else {
+		fmt.Printf("⚠️ Warning: Created pane %s is marked as parent pane\n", newPaneID)
+	}
+	
+	return newPaneID, nil
+}
+
+
+// isParentPane checks if a pane ID is a parent pane
+func (m *AIManager) isParentPane(paneID string) bool {
+	return m.parentPanes[paneID]
+}
+
+// executeSubTask creates a new child pane and sends a subtask to it
+func (m *AIManager) executeSubTask(task models.SubTask, splitCommand string) error {
+	// Create split command with -P -F option to get new pane ID directly
+	formattedSplitCommand := fmt.Sprintf("%s -P -F \"#{pane_id}\"", splitCommand)
+	
+	// Create new pane and get its ID
+	newPaneID, err := m.detectNewPane(formattedSplitCommand)
+	if err != nil {
+		return fmt.Errorf("failed to create and detect new pane: %v", err)
+	}
+	
+	// Ensure we don't send to parent panes
+	if m.isParentPane(newPaneID) {
+		return fmt.Errorf("detected pane %s is a parent pane, cannot send implementation task", newPaneID)
+	}
+	
+	// Wait for the pane to be ready
+	time.Sleep(500 * time.Millisecond)
+	
+	// Start Claude in the new pane
+	claudeStartCmd := fmt.Sprintf("tmux send-keys -t %s 'claude --dangerously-skip-permissions' Enter", newPaneID)
+	if err := m.sessionManager.ExecuteCommand(claudeStartCmd); err != nil {
+		return fmt.Errorf("failed to start Claude in pane %s: %v", newPaneID, err)
+	}
+	
+	// Wait for Claude to start
+	time.Sleep(2 * time.Second)
+	
+	// Send the subtask to the new pane
+	taskMessage := fmt.Sprintf("サブタスク: %s", task.Description)
+	if err := m.sessionManager.SendToPane(newPaneID, taskMessage); err != nil {
+		return fmt.Errorf("failed to send task to pane %s: %v", newPaneID, err)
+	}
+	
+	// Update task tracker with the new pane assignment
+	m.taskTracker.UpdateSubTaskPane(task.ID, newPaneID)
+	
+	fmt.Printf("✅ Successfully sent subtask to new child pane %s\n", newPaneID)
+	return nil
+}
+
+// SendTaskToChildPane sends a task to a specific child pane with enhanced filtering
+func (m *AIManager) SendTaskToChildPane(paneID, taskDescription string) error {
+	// Use the enhanced task service for filtering and assignment
+	if m.taskService != nil {
+		// Validate and get the appropriate pane for the task
+		assignedPaneID, err := m.taskService.FilterAndAssignTask(taskDescription, paneID)
+		if err != nil {
+			return fmt.Errorf("task filtering failed: %v", err)
+		}
+		
+		// If the task was redirected, log it
+		if assignedPaneID != paneID {
+			fmt.Printf("🔄 Task automatically redirected from %s to %s\n", paneID, assignedPaneID)
+		}
+		
+		// Send the task to the assigned pane
+		return m.sessionManager.SendToFilteredPane(assignedPaneID, taskDescription)
+	}
+	
+	// Fallback to legacy validation
+	if m.isParentPane(paneID) {
+		// Find or create a suitable child pane
+		childPane, err := m.findOrCreateChildPane()
+		if err != nil {
+			return fmt.Errorf("cannot send implementation task to parent pane %s and failed to create child pane: %v", paneID, err)
+		}
+		paneID = childPane
+		fmt.Printf("⚠️ Redirected task from parent pane to child pane %s\n", paneID)
+	}
+	
+	// Send the task
+	return m.sessionManager.SendToPane(paneID, taskDescription)
+}
+
+// findOrCreateChildPane finds an existing child pane or creates a new one
+func (m *AIManager) findOrCreateChildPane() (string, error) {
+	// Get current panes
+	panes, err := m.sessionManager.GetPanes()
+	if err != nil {
+		return "", fmt.Errorf("failed to get panes: %v", err)
+	}
+	
+	// Debug: Log available panes
+	fmt.Printf("🔍 Checking %d available panes for child panes\n", len(panes))
+	
+	// Look for existing child panes
+	for _, pane := range panes {
+		if !m.isParentPane(pane) {
+			fmt.Printf("✅ Found existing child pane: %s\n", pane)
+			return pane, nil
+		}
+		fmt.Printf("⏭️ Skipping parent pane: %s\n", pane)
+	}
+	
+	// No child pane found, create a new one
+	fmt.Printf("🔨 No child pane found, creating new one\n")
+	splitCmd := "tmux split-window -h -t claude-squad -P -F \"#{pane_id}\""
+	newPaneID, err := m.detectNewPane(splitCmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to create new child pane: %v", err)
+	}
+	
+	// Start Claude in the new pane
+	time.Sleep(500 * time.Millisecond)
+	claudeStartCmd := fmt.Sprintf("tmux send-keys -t %s 'claude --dangerously-skip-permissions' Enter", newPaneID)
+	if err := m.sessionManager.ExecuteCommand(claudeStartCmd); err != nil {
+		return "", fmt.Errorf("failed to start Claude in new pane %s: %v", newPaneID, err)
+	}
+	
+	// Wait for Claude to be ready
+	fmt.Printf("⏳ Waiting for Claude to start in pane %s\n", newPaneID)
+	time.Sleep(2 * time.Second)
+	
+	return newPaneID, nil
+}
+
+// ValidateAndEnforceTaskAssignment は統合されたタスク割り当て検証・強制システム
+func (m *AIManager) ValidateAndEnforceTaskAssignment(taskDescription, requestedPaneID string) error {
+	if m.taskService == nil {
+		return fmt.Errorf("task service not available for validation")
+	}
+	
+	// タスク割り当ての妥当性を検証
+	isValid, message, err := m.taskService.ValidateTaskAssignment(taskDescription, requestedPaneID)
+	if err != nil {
+		return fmt.Errorf("validation failed: %v", err)
+	}
+	
+	if !isValid {
+		fmt.Printf("⚠️  Task assignment validation failed: %s\n", message)
+		// 役割ベースの強制割り当てを実行
+		return m.taskService.EnforceRoleBasedAssignment(taskDescription, requestedPaneID)
+	}
+	
+	fmt.Printf("✅ Task assignment validated: %s\n", message)
+	return m.sessionManager.SendToPane(requestedPaneID, taskDescription)
+}
+
+// GetPaneStatistics はペイン統計情報を取得
+func (m *AIManager) GetPaneStatistics() (map[string]interface{}, error) {
+	allPanes, err := m.sessionManager.GetPanes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get panes: %v", err)
+	}
+	
+	childPanes, err := m.sessionManager.GetChildPanes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child panes: %v", err)
+	}
+	
+	parentCount := 0
+	for _, pane := range allPanes {
+		if m.sessionManager.IsParentPane(pane) {
+			parentCount++
+		}
+	}
+	
+	stats := map[string]interface{}{
+		"total_panes":  len(allPanes),
+		"parent_panes": parentCount,
+		"child_panes":  len(childPanes),
+		"pane_list":    allPanes,
+		"child_list":   childPanes,
+	}
+	
+	return stats, nil
 }

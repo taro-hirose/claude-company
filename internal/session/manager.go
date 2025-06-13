@@ -9,20 +9,29 @@ import (
 )
 
 type Manager struct {
-	SessionName string
-	ClaudeCmd   string
+	SessionName   string
+	ClaudeCmd     string
+	ParentPanes   map[string]bool  // 親ペイン追跡マップ
+	InitialPanes  []string         // 初期ペイン状態
 }
 
 func NewManager(sessionName, claudeCmd string) *Manager {
 	return &Manager{
-		SessionName: sessionName,
-		ClaudeCmd:   claudeCmd,
+		SessionName:  sessionName,
+		ClaudeCmd:    claudeCmd,
+		ParentPanes:  make(map[string]bool),
+		InitialPanes: []string{},
 	}
 }
 
 func (m *Manager) Setup() error {
 	if _, err := exec.LookPath("tmux"); err != nil {
 		return fmt.Errorf("❌ Error: tmux is not installed")
+	}
+
+	// 初期状態のペインを記録
+	if err := m.recordInitialPanes(); err != nil {
+		return fmt.Errorf("failed to record initial panes: %v", err)
 	}
 
 	cmd := exec.Command("tmux", "has-session", "-t", m.SessionName)
@@ -301,4 +310,101 @@ func (m *Manager) isClaudeReady(paneID string) bool {
 
 	content := string(output)
 	return strings.Contains(content, "claude") || strings.Contains(content, "ready") || strings.Contains(content, "$")
+}
+
+// recordInitialPanes は初期状態のペインを記録し、親ペインとして設定
+func (m *Manager) recordInitialPanes() error {
+	panes, err := m.GetAllPanes()
+	if err != nil {
+		// セッションが存在しない場合は問題なし
+		return nil
+	}
+	
+	m.InitialPanes = make([]string, len(panes))
+	copy(m.InitialPanes, panes)
+	
+	// 初期ペインを親ペインとして記録
+	for _, pane := range panes {
+		m.ParentPanes[pane] = true
+	}
+	
+	fmt.Printf("🔍 Recorded %d initial parent panes\n", len(panes))
+	return nil
+}
+
+// IsParentPane は指定されたペインが親ペインかどうかを判定
+func (m *Manager) IsParentPane(paneID string) bool {
+	return m.ParentPanes[paneID]
+}
+
+// IsChildPane は指定されたペインが子ペインかどうかを判定（差分検出）
+func (m *Manager) IsChildPane(paneID string) bool {
+	return !m.ParentPanes[paneID]
+}
+
+// GetChildPanes は子ペイン一覧を取得
+func (m *Manager) GetChildPanes() ([]string, error) {
+	allPanes, err := m.GetPanes()
+	if err != nil {
+		return nil, err
+	}
+	
+	var childPanes []string
+	for _, pane := range allPanes {
+		if m.IsChildPane(pane) {
+			childPanes = append(childPanes, pane)
+		}
+	}
+	
+	return childPanes, nil
+}
+
+// SendToChildPaneOnly は子ペインにのみタスクを送信
+func (m *Manager) SendToChildPaneOnly(command string) error {
+	childPanes, err := m.GetChildPanes()
+	if err != nil {
+		return fmt.Errorf("failed to get child panes: %v", err)
+	}
+	
+	if len(childPanes) == 0 {
+		// 子ペインが存在しない場合は新しく作成
+		return m.SendToNewPaneOnly(command)
+	}
+	
+	// 最初の子ペインに送信
+	targetPane := childPanes[0]
+	return m.SendToPane(targetPane, command)
+}
+
+// SendToFilteredPane はペインフィルタリング付きでタスクを送信
+func (m *Manager) SendToFilteredPane(paneID, command string) error {
+	if m.IsParentPane(paneID) {
+		fmt.Printf("⚠️  Blocked task assignment to parent pane %s\n", paneID)
+		fmt.Println("🔄 Redirecting to child pane...")
+		return m.SendToChildPaneOnly(command)
+	}
+	
+	fmt.Printf("✅ Task assigned to child pane %s\n", paneID)
+	return m.SendToPane(paneID, command)
+}
+
+// CreateNewPaneAndRegisterAsChild は新しいペインを作成し子ペインとして登録
+func (m *Manager) CreateNewPaneAndRegisterAsChild() (string, error) {
+	newPaneID, err := m.CreateNewPaneAndGetID()
+	if err != nil {
+		return "", err
+	}
+	
+	// 新しいペインは自動的に子ペインとして扱われる（parentPanesに含まれない）
+	fmt.Printf("📝 Registered new child pane: %s\n", newPaneID)
+	return newPaneID, nil
+}
+
+// ExecuteCommand executes a shell command directly
+func (m *Manager) ExecuteCommand(command string) error {
+	cmd := exec.Command("bash", "-c", command)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("command failed: %v, output: %s", err, string(output))
+	}
+	return nil
 }
