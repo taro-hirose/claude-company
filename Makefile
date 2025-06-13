@@ -6,16 +6,19 @@ build: build-storm build-deploy
 # Build storm binary (tmux session manager)
 build-storm:
 	@echo "⚡ Building storm binary..."
+	@mkdir -p bin
 	go build -o bin/storm ./cmd/ccs
 
 # Build deploy binary (AI task manager)
 build-deploy:
 	@echo "🚀 Building deploy binary..."
+	@mkdir -p bin
 	go build -o bin/deploy .
 
 # Build for multiple platforms
 build-cross:
-	@echo "Building for multiple platforms..."
+	@echo "🌍 Building for multiple platforms..."
+	@mkdir -p bin
 	GOOS=linux GOARCH=amd64 go build -o bin/storm-linux-amd64 ./cmd/ccs
 	GOOS=darwin GOARCH=amd64 go build -o bin/storm-darwin-amd64 ./cmd/ccs
 	GOOS=darwin GOARCH=arm64 go build -o bin/storm-darwin-arm64 ./cmd/ccs
