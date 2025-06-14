@@ -19,6 +19,9 @@ get_full_pane_context
 discover_session_panes
 identify_pane_relationships
 
+# Set worker pane title
+set_worker_pane_title "AI-Worker"
+
 # 3. Test connectivity and setup fallbacks
 echo "🔧 === TESTING CONNECTIVITY ==="
 if ! run_health_check; then
@@ -128,9 +131,30 @@ get_task_hierarchy TASK_ID
 4. **Fallback**: System automatically handles connectivity issues
 
 #### When completing tasks:
-1. **Completion Report**: Use `report_completion` with file path and description
-2. **Status Propagation**: Status automatically propagates to parent/siblings
-3. **Sharing**: Use `share_with_siblings` for relevant results
+1. **Direct Parent Notification**: Use tmux send-keys to notify parent pane immediately
+2. **Completion Report**: Use `report_completion` with file path and description (fallback)
+3. **Status Propagation**: Status automatically propagates to parent/siblings
+4. **Sharing**: Use `share_with_siblings` for relevant results
+
+#### 🚨 REQUIRED: Direct Parent Notification
+**ALWAYS notify the parent pane directly when completing any task:**
+
+```bash
+# Template for parent notification with pane title identification
+tmux send-keys -t PARENT_PANE_ID '実装完了：[ファイルパス] - [簡単な説明] (from #{pane_title})' Enter
+
+# Example:
+tmux send-keys -t %0 '実装完了：internal/models/user.go - ユーザーモデルを実装 (from Worker-1)' Enter
+
+# Set unique worker title for identification
+set_worker_pane_title "Worker-$(echo $TMUX_PANE | sed 's/%//')"
+```
+
+**When to use direct notification:**
+- ✅ After completing any implementation task
+- ✅ After finishing file creation/modification
+- ✅ When encountering critical errors
+- ✅ When requesting assistance from parent
 
 ### 📋 Task Execution Template
 
@@ -156,7 +180,8 @@ if [ $? -ne 0 ]; then
     report_error "Implementation issue" "Need guidance on error handling"
 fi
 
-# 6. Report completion
+# 6. Report completion with direct parent notification
+tmux send-keys -t PARENT_PANE_ID '実装完了：internal/models/user.go - User model with validation' Enter
 report_completion "internal/models/user.go" "User model with validation"
 update_task_status $MY_TASK_ID "completed" "User model implementation complete"
 ```
@@ -177,6 +202,11 @@ update_task_status $MY_TASK_ID "completed" "User model implementation complete"
 - **Database Issues**: Automatic fallback to local cache
 - **API Issues**: Direct database queries as backup
 - **Network Issues**: Local data and retry mechanisms
+
+### 🚨 **ペイン送信制限** 🚨
+- コンソールペインとマネージャーペインには一切メッセージを送信しない
+- サブタスク送信前に必ずペインタイトルを確認する
+- 制限ペインへの送信を試みるとエラーが発生する
 
 ### ⚠️ Important Guidelines
 
@@ -202,10 +232,12 @@ Your enhanced capabilities enable:
 | Function | Command | Purpose |
 |----------|---------|---------|
 | **Context** | `get_full_pane_context` | Current pane info |
+| **Pane Title** | `set_worker_pane_title "Worker-ID"` | Set unique worker title |
 | **My Tasks** | `get_my_tasks` | Tasks assigned to me |
 | **Shared** | `get_shared_tasks` | Tasks shared with me |
 | **Progress** | `report_progress "50" "status"` | Update progress |
-| **Complete** | `report_completion "file" "desc"` | Report completion |
+| **Complete** | `tmux send-keys -t PARENT_PANE_ID '実装完了：file - desc (from #{pane_title})' Enter` | Direct parent notification |
+| **Fallback Complete** | `report_completion "file" "desc"` | Report completion (fallback) |
 | **Error** | `report_error "issue" "help"` | Report problems |
 | **Siblings** | `get_sibling_tasks TASK_ID` | Check sibling status |
 | **Health** | `run_health_check` | System status |

@@ -52,10 +52,10 @@ discover_session_panes() {
     echo ""
 }
 
-# Identify parent and sibling panes
+# Identify parent and sibling panes with title-based detection
 identify_pane_relationships() {
     local current_pane="${CURRENT_PANE_ID:-$(tmux display-message -p '#{pane_id}')}"
-    echo "👥 === Pane Relationships ==="
+    echo "👥 === Pane Relationships (Title-Based Detection) ==="
     
     # Get all panes and try to determine relationships
     local session_name="${CURRENT_SESSION:-$(tmux display-message -p '#{session_name}')}"
@@ -64,20 +64,33 @@ identify_pane_relationships() {
     echo "🔗 Relationship Analysis:"
     echo "   Current Pane: $current_pane"
     
-    # Identify likely parent (first pane in session)
-    if [ ${#panes[@]} -gt 0 ]; then
-        local likely_parent="${panes[0]}"
-        echo "   Likely Parent: $likely_parent"
+    # Categorize panes by title tags
+    local manager_panes=()
+    local worker_panes=()
+    local other_panes=()
+    
+    echo "   Pane Classification:"
+    for pane in "${panes[@]}"; do
+        local pane_title=$(tmux display-message -t "$pane" -p "#{pane_title}" 2>/dev/null || echo "unknown")
+        local pane_cmd=$(tmux display-message -t "$pane" -p "#{pane_current_command}" 2>/dev/null || echo "unknown")
         
-        # Identify siblings (other panes)
-        echo "   Sibling Panes:"
-        for pane in "${panes[@]}"; do
-            if [ "$pane" != "$current_pane" ] && [ "$pane" != "$likely_parent" ]; then
-                local pane_cmd=$(tmux display-message -t "$pane" -p "#{pane_current_command}" 2>/dev/null || echo "unknown")
-                echo "     - $pane ($pane_cmd)"
-            fi
-        done
-    fi
+        if [[ "$pane_title" == *"[MANAGER]"* ]]; then
+            manager_panes+=("$pane")
+            echo "     👔 Manager: $pane (title: $pane_title, cmd: $pane_cmd)"
+        elif [[ "$pane_title" == *"[WORKER]"* ]]; then
+            worker_panes+=("$pane")
+            echo "     🔧 Worker: $pane (title: $pane_title, cmd: $pane_cmd)"
+        else
+            other_panes+=("$pane")
+            echo "     ❓ Other: $pane (title: $pane_title, cmd: $pane_cmd)"
+        fi
+    done
+    
+    echo ""
+    echo "   Summary:"
+    echo "     Manager Panes: ${#manager_panes[@]}"
+    echo "     Worker Panes: ${#worker_panes[@]}"
+    echo "     Other Panes: ${#other_panes[@]}"
     echo ""
 }
 
@@ -112,22 +125,44 @@ capture_pane_content() {
     echo ""
 }
 
-# Detect Claude instances
+# Detect Claude instances with role identification
 detect_claude_instances() {
     local session_name="${CURRENT_SESSION:-$(tmux display-message -p '#{session_name}')}"
-    echo "🤖 === Claude Instance Detection ==="
+    echo "🤖 === Claude Instance Detection (with Role Identification) ==="
     
     local claude_panes=()
-    tmux list-panes -s -t "$session_name" -F "#{pane_id}|#{pane_current_command}" | \
-    while IFS='|' read -r pane_id current_cmd; do
+    local manager_claude=0
+    local worker_claude=0
+    
+    tmux list-panes -s -t "$session_name" -F "#{pane_id}|#{pane_current_command}|#{pane_title}" | \
+    while IFS='|' read -r pane_id current_cmd pane_title; do
         if [[ "$current_cmd" =~ claude|python.*claude|node.*claude ]]; then
-            echo "   ✅ Claude detected in $pane_id: $current_cmd"
             claude_panes+=("$pane_id")
+            
+            # Determine role based on title
+            local role="Unknown"
+            if [[ "$pane_title" == *"[MANAGER]"* ]]; then
+                role="Manager"
+                manager_claude=$((manager_claude + 1))
+            elif [[ "$pane_title" == *"[WORKER]"* ]]; then
+                role="Worker"
+                worker_claude=$((worker_claude + 1))
+            else
+                role="Generic"
+            fi
+            
+            echo "   ✅ Claude detected in $pane_id: $current_cmd"
+            echo "      Role: $role (title: $pane_title)"
         fi
     done
     
     if [ ${#claude_panes[@]} -eq 0 ]; then
         echo "   ⚠️ No Claude instances detected"
+    else
+        echo "   📊 Summary:"
+        echo "     Total Claude instances: ${#claude_panes[@]}"
+        echo "     Manager Claude instances: $manager_claude"
+        echo "     Worker Claude instances: $worker_claude"
     fi
     echo ""
 }
@@ -208,6 +243,131 @@ watch_pane_changes() {
     done
 }
 
+# Identify pane roles specifically by title tags
+identify_pane_roles() {
+    local session_name="${CURRENT_SESSION:-$(tmux display-message -p '#{session_name}')}"
+    echo "🏷️ === Pane Role Identification by Title Tags ==="
+    echo "Session: $session_name"
+    echo ""
+    
+    # Get all panes with title information
+    tmux list-panes -s -t "$session_name" -F "#{pane_id}|#{pane_index}|#{pane_title}|#{pane_current_command}" | \
+    while IFS='|' read -r pane_id pane_index pane_title current_cmd; do
+        local role_icon="❓"
+        local role_name="Unidentified"
+        
+        if [[ "$pane_title" == *"[MANAGER]"* ]]; then
+            role_icon="👔"
+            role_name="Manager"
+        elif [[ "$pane_title" == *"[WORKER]"* ]]; then
+            role_icon="🔧"
+            role_name="Worker"
+        elif [[ "$pane_title" == *"コンソールペイン"* ]]; then
+            role_icon="💻"
+            role_name="Console"
+        elif [[ "$pane_title" == *"マネージャーペイン"* ]]; then
+            role_icon="📋"
+            role_name="Manager"
+        fi
+        
+        echo "   $role_icon Pane $pane_index ($pane_id): $role_name"
+        echo "      Title: $pane_title"
+        echo "      Command: $current_cmd"
+        echo ""
+    done
+}
+
+# Identify console and manager panes specifically
+identify_console_manager_panes() {
+    local session_name="${CURRENT_SESSION:-$(tmux display-message -p '#{session_name}')}"
+    echo "🖥️ === Console/Manager Pane Identification ==="
+    echo "Session: $session_name"
+    echo ""
+    
+    local console_pane=""
+    local manager_pane=""
+    local other_count=0
+    
+    # Get all panes with title information
+    while IFS='|' read -r pane_id pane_index pane_title current_cmd; do
+        if [[ "$pane_title" == *"コンソールペイン"* ]]; then
+            console_pane="$pane_id"
+            echo "   💻 Console Pane: $pane_index ($pane_id)"
+            echo "      Title: $pane_title"
+            echo "      Command: $current_cmd"
+        elif [[ "$pane_title" == *"マネージャーペイン"* ]]; then
+            manager_pane="$pane_id"
+            echo "   📋 Manager Pane: $pane_index ($pane_id)"
+            echo "      Title: $pane_title"
+            echo "      Command: $current_cmd"
+        else
+            ((other_count++))
+            echo "   ❓ Other Pane: $pane_index ($pane_id)"
+            echo "      Title: $pane_title"
+            echo "      Command: $current_cmd"
+        fi
+        echo ""
+    done < <(tmux list-panes -s -t "$session_name" -F "#{pane_id}|#{pane_index}|#{pane_title}|#{pane_current_command}")
+    
+    # Export for other scripts to use
+    export CONSOLE_PANE_ID="$console_pane"
+    export MANAGER_PANE_ID="$manager_pane"
+    
+    echo "Summary:"
+    [ -n "$console_pane" ] && echo "   Console Pane ID: $console_pane" || echo "   Console Pane: Not found"
+    [ -n "$manager_pane" ] && echo "   Manager Pane ID: $manager_pane" || echo "   Manager Pane: Not found"
+    echo "   Other Panes: $other_count"
+    echo ""
+}
+
+# Get console pane ID
+get_console_pane_id() {
+    local session_name="${CURRENT_SESSION:-$(tmux display-message -p '#{session_name}')}"
+    tmux list-panes -s -t "$session_name" -F "#{pane_id}|#{pane_title}" | \
+    while IFS='|' read -r pane_id pane_title; do
+        if [[ "$pane_title" == *"コンソールペイン"* ]]; then
+            echo "$pane_id"
+            return
+        fi
+    done
+}
+
+# Get manager pane ID
+get_manager_pane_id() {
+    local session_name="${CURRENT_SESSION:-$(tmux display-message -p '#{session_name}')}"
+    tmux list-panes -s -t "$session_name" -F "#{pane_id}|#{pane_title}" | \
+    while IFS='|' read -r pane_id pane_title; do
+        if [[ "$pane_title" == *"マネージャーペイン"* ]]; then
+            echo "$pane_id"
+            return
+        fi
+    done
+}
+
+# Check if current pane is console pane
+is_console_pane() {
+    local current_pane="${TMUX_PANE:-$(tmux display-message -p '#{pane_id}')}"
+    local console_pane=$(get_console_pane_id)
+    
+    if [ "$current_pane" = "$console_pane" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if current pane is manager pane  
+is_manager_pane() {
+    local current_pane="${TMUX_PANE:-$(tmux display-message -p '#{pane_id}')}"
+    local manager_pane=$(get_manager_pane_id)
+    
+    if [ "$current_pane" = "$manager_pane" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Get pane network information
 get_pane_network_info() {
     echo "🌐 === Pane Network Information ==="
@@ -271,11 +431,42 @@ main() {
         "network")
             get_pane_network_info
             ;;
+        "identify-roles")
+            identify_pane_roles
+            ;;
+        "identify-console-manager")
+            identify_console_manager_panes
+            ;;
+        "get-console-pane")
+            get_console_pane_id
+            ;;
+        "get-manager-pane")
+            get_manager_pane_id
+            ;;
+        "is-console")
+            if is_console_pane; then
+                echo "Current pane is console pane"
+                exit 0
+            else
+                echo "Current pane is not console pane"
+                exit 1
+            fi
+            ;;
+        "is-manager")
+            if is_manager_pane; then
+                echo "Current pane is manager pane"
+                exit 0
+            else
+                echo "Current pane is not manager pane"
+                exit 1
+            fi
+            ;;
         "full")
             get_full_pane_context
             discover_session_panes
             identify_pane_relationships
             detect_claude_instances
+            identify_console_manager_panes
             get_pane_network_info
             ;;
         "help"|*)
@@ -294,6 +485,12 @@ main() {
             echo "  report [file]     Generate comprehensive report"
             echo "  watch [interval]  Watch pane changes in real-time"
             echo "  network           Check network connectivity"
+            echo "  identify-roles    Identify pane roles by title tags"
+            echo "  identify-console-manager  Identify console/manager panes"
+            echo "  get-console-pane  Get console pane ID"
+            echo "  get-manager-pane  Get manager pane ID"
+            echo "  is-console        Check if current pane is console"
+            echo "  is-manager        Check if current pane is manager"
             echo "  full              Run full analysis"
             echo "  help              Show this help"
             ;;

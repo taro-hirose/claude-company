@@ -118,84 +118,84 @@ go build -o bin/ccs
 ./bin/ccs --task "Profile the application, identify bottlenecks, and implement performance improvements"
 ```
 
-## 🛠️ Command Reference
+## 🛠️ コマンドリファレンス (Command Reference)
 
-### **Main Commands**
+### **メインコマンド (Main Commands)**
 ```bash
-# Setup tmux session (default behavior)
+# tmuxセッションのセットアップ（デフォルト動作）
 ./bin/ccs
 ./bin/ccs --setup
 
-# Assign task to AI team (requires database)
+# AIチームにタスクを割り当て（データベースが必要）
 ./bin/ccs --task "TASK_DESCRIPTION"
 
-# API server mode
+# APIサーバーモード
 ./bin/ccs --api
 ```
 
-### **STORM Session Management**
+### **STORMセッション管理 (STORM Session Management)**
 ```bash
-# List all sessions
-./bin/storm list     # or 'ls'
+# 全セッションをリスト表示
+./bin/storm list     # または 'ls'
 
-# Create new session  
+# 新しいセッションを作成
 ./bin/storm new <session-name>
 
-# Attach to session
-./bin/storm attach <session-name>  # or 'a'
+# セッションにアタッチ
+./bin/storm attach <session-name>  # または 'a'
 
-# Kill session
-./bin/storm kill <session-name>    # or 'k'
+# セッションを終了
+./bin/storm kill <session-name>    # または 'k'
 
-# Switch between sessions
-./bin/storm switch <session-name>  # or 's'
+# セッション間の切り替え
+./bin/storm switch <session-name>  # または 's'
 
-# Rename session
-./bin/storm rename <old-name> <new-name>  # or 'r'
+# セッション名を変更
+./bin/storm rename <old-name> <new-name>  # または 'r'
 ```
 
-## 🎯 How It Works
+## 🎯 動作原理 (How It Works)
 
-### **Manager AI Responsibilities**
-- ❌ **Never writes code directly**  
-- ✅ **Analyzes and breaks down tasks**
-- ✅ **Creates and manages worker panes**
-- ✅ **Assigns specific subtasks to workers**
-- ✅ **Reviews completed work for quality**
-- ✅ **Coordinates testing and integration**
-- ✅ **Provides final approval and completion**
+### **マネージャーAIの責任 (Manager AI Responsibilities)**
+- ❌ **コードを直接書くことはしない**  
+- ✅ **タスクを分析・分解する**
+- ✅ **ワーカーペインを作成・管理する**
+- ✅ **特定のサブタスクをワーカーに割り当てる**
+- ✅ **完了した作業の品質をレビューする**
+- ✅ **テストと統合を調整する**
+- ✅ **最終承認と完了確認を行う**
 
-### **Worker AI Responsibilities**  
-- ✅ **Implements assigned subtasks**
-- ✅ **Writes actual code and creates files**
-- ✅ **Reports completion with deliverables**
-- ✅ **Responds to feedback and revision requests**
-- ✅ **Fixes issues identified during review**
+### **ワーカーAIの責任 (Worker AI Responsibilities)**  
+- ✅ **割り当てられたサブタスクを実装する**
+- ✅ **実際のコードを書きファイルを作成する**
+- ✅ **成果物と共に完了を報告する**
+- ✅ **フィードバックと修正要請に対応する**
+- ✅ **レビューで特定された問題を修正する**
 
-### **Communication Protocol**
+### **コミュニケーションプロトコル (Communication Protocol)**
 ```bash
-# Worker → Manager reporting format
+# ワーカー → マネージャー 報告フォーマット
 "実装完了：internal/auth/jwt.go - JWT token generation and validation implemented"
 
-# Manager → Worker task assignment format  
+# マネージャー → ワーカー タスク割り当てフォーマット
 "サブタスク: Create user authentication middleware in internal/auth/middleware.go. Include JWT validation and error handling. Report completion when done."
 
-# Manager → Worker review requests
+# マネージャー → ワーカー レビュー要請
 "レビュー要請: Please review internal/auth/jwt.go for code quality, security best practices, and integration compatibility."
 ```
 
-## 🔧 Installation & Setup
+## 🔧 インストール・セットアップ (Installation & Setup)
 
-### **System Requirements**
-- **Go 1.21+** for building from source
-- **tmux** - Required for pane management
-- **Claude AI access** - Via Claude CLI tool
-- **Docker & Docker Compose** - For database services
-- **Unix-like OS** - Linux, macOS, or WSL
+### **システム要件 (System Requirements)**
+- **Go 1.21+** - ソースからのビルド用
+- **tmux** - ペイン管理に必要
+- **Claude AIアクセス** - Claude CLIツール経由
+- **Docker & Docker Compose** - データベースサービス用
+- **Unix系OS** - Linux、macOS、またはWSL
 
-### **Step-by-Step Installation**
+### **段階的インストール (Step-by-Step Installation)**
 
-1. **Install Dependencies**
+1. **依存関係のインストール (Install Dependencies)**
 ```bash
 # macOS
 brew install tmux go docker
@@ -203,10 +203,10 @@ brew install tmux go docker
 # Ubuntu/Debian  
 sudo apt install tmux golang-go docker.io docker-compose
 
-# Install Claude CLI (follow official docs)
+# Claude CLIのインストール（公式ドキュメントに従う）
 ```
 
-2. **Build Claude Company**
+2. **Claude Companyのビルド (Build Claude Company)**
 ```bash
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
@@ -214,53 +214,53 @@ go mod tidy
 go build -o bin/ccs
 ```
 
-3. **Setup PATH (optional)**
+3. **PATH設定（オプション）(Setup PATH (optional))**
 ```bash
 cp bin/ccs ~/bin/ccs
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## 🗄️ Database Setup & Configuration
+## 🗄️ データベース設定・構成 (Database Setup & Configuration)
 
-### **Prerequisites**
+### **前提条件 (Prerequisites)**
 
-Before starting, ensure you have the following installed:
+開始前に、以下がインストールされていることを確認してください：
 
 ```bash
-# Check Docker version (minimum required: 20.10+)
+# Dockerバージョンの確認（最低要件：20.10+）
 docker --version
 
-# Check Docker Compose version (minimum required: 2.0+)
+# Docker Composeバージョンの確認（最低要件：2.0+）
 docker-compose --version
 
-# Verify Docker daemon is running
+# Dockerデーモンの動作確認
 docker info
 ```
 
-**Required versions:**
-- **Docker**: 20.10.0 or higher
-- **Docker Compose**: 2.0.0 or higher
-- **Available ports**: 5432 (PostgreSQL), 8080 (pgAdmin)
+**必要なバージョン (Required versions):**
+- **Docker**: 20.10.0以上
+- **Docker Compose**: 2.0.0以上
+- **利用可能ポート (Available ports)**: 5432 (PostgreSQL), 8080 (pgAdmin)
 
-### **Database Configuration**
+### **データベース構成 (Database Configuration)**
 
-This project uses PostgreSQL as the database backend:
+このプロジェクトはPostgreSQLをデータベースバックエンドとして使用します：
 
 **🟢 PostgreSQL**
-- Advanced JSON support and complex queries
-- Better performance for analytical workloads
-- Includes pgAdmin web interface
-- Default choice for Claude Company features
+- 高度なJSONサポートと複雑なクエリ
+- 分析ワークロードでのより良いパフォーマンス
+- pgAdmin Webインターフェースを含む
+- Claude Company機能のデフォルト選択
 
-### **1. Initial Setup Process**
+### **1. 初期セットアッププロセス (Initial Setup Process)**
 
-#### **Step 1: Environment Configuration**
+#### **Step 1: 環境設定 (Environment Configuration)**
 
-Create environment file for database settings:
+データベース設定用の環境ファイルを作成：
 
 ```bash
-# Create .env file in project root
+# プロジェクトルートに.envファイルを作成
 cat > .env << 'EOF'
 # Database Configuration
 DB_HOST=localhost
@@ -279,69 +279,69 @@ DB_TYPE=postgres
 EOF
 ```
 
-#### **Step 2: Start Database Services**
+#### **Step 2: データベースサービスの開始 (Start Database Services)**
 
 ```bash
-# Start all database services in background
+# 全データベースサービスをバックグラウンドで開始
 docker-compose up -d
 
-# Start PostgreSQL services
+# PostgreSQLサービスを開始
 docker-compose up -d postgres pgadmin
 ```
 
-#### **Step 3: Verify Service Status**
+#### **Step 3: サービス状態の確認 (Verify Service Status)**
 
 ```bash
-# Check all services status
+# 全サービスの状態を確認
 docker-compose ps
 
-# Expected output:
+# 期待される出力:
 # NAME                     IMAGE               STATUS
 # claude-company-db        postgres:15-alpine  Up (healthy)
 # claude-company-pgadmin   dpage/pgadmin4      Up
 ```
 
-**Services Started:**
-- **PostgreSQL Database**: `localhost:5432`
-- **pgAdmin Web Interface**: `http://localhost:8080`
+**開始されたサービス (Services Started):**
+- **PostgreSQLデータベース**: `localhost:5432`
+- **pgAdmin Webインターフェース**: `http://localhost:8080`
 
-### **2. Connection Verification & Testing**
+### **2. 接続確認・テスト (Connection Verification & Testing)**
 
-#### **Step 4: Verify Database Connection**
+#### **Step 4: データベース接続の確認 (Verify Database Connection)**
 
-**PostgreSQL Connection Test:**
+**PostgreSQL接続テスト:**
 ```bash
-# Wait for services to be fully ready (may take 30-60 seconds)
+# サービスが完全に準備されるまで待機（30-60秒かかる場合があります）
 docker-compose logs postgres | grep "ready to accept connections"
 
-# Test connection using docker exec
+# docker execを使用した接続テスト
 docker exec claude-company-db psql -U claude_user -d claude_company -c "SELECT version();"
 
-# Test connection from host machine (requires psql client)
+# ホストマシンからの接続テスト（psqlクライアントが必要）
 PGPASSWORD=claude_password psql -h localhost -p 5432 -U claude_user -d claude_company -c "\\dt"
 ```
 
 
-#### **Step 5: Access Web Interfaces**
+#### **Step 5: Webインターフェースへのアクセス (Access Web Interfaces)**
 
-**pgAdmin (PostgreSQL Management):**
-1. Open `http://localhost:8080` in your browser
-2. Login credentials:
+**pgAdmin (PostgreSQL管理):**
+1. ブラウザで`http://localhost:8080`を開く
+2. ログイン認証情報:
    - **Email**: `admin@claude-company.local`
    - **Password**: `admin123`
-3. Add server connection:
-   - **Host**: `postgres` (Docker service name)
+3. サーバー接続を追加:
+   - **Host**: `postgres` (Dockerサービス名)
    - **Port**: `5432`
    - **Username**: `claude_user`
    - **Password**: `claude_password`
 
 
-### **3. Environment Variables Reference**
+### **3. 環境変数リファレンス (Environment Variables Reference)**
 
-Configure database connection settings:
+データベース接続設定の構成：
 
 ```bash
-# Required environment variables for PostgreSQL
+# PostgreSQL用の必須環境変数
 export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USER=claude_user
@@ -350,12 +350,12 @@ export DB_NAME=claude_company
 export DB_SSLMODE=disable
 
 
-# API server settings
+# APIサーバー設定
 export PORT=8081
 export GIN_MODE=release
 ```
 
-**Environment file (.env) template:**
+**環境ファイル（.env）テンプレート:**
 ```bash
 # PostgreSQL Configuration (default)
 DB_HOST=localhost
@@ -374,43 +374,43 @@ GIN_MODE=release
 DB_TYPE=postgres
 ```
 
-### **4. Database Schema & Initialization**
+### **4. データベーススキーマ・初期化 (Database Schema & Initialization)**
 
-The database schema is automatically initialized when starting the containers. The initialization includes:
+データベーススキーマはコンテナ起動時に自動的に初期化されます。初期化には以下が含まれます：
 
-- **Task tables** with hierarchical structure and ULID primary keys
-- **Progress tracking** tables for real-time monitoring
-- **Indexes** for performance optimization
-- **Functions** for task hierarchy management and calculations
-- **Sample data** for testing and demonstration
+- **階層構造とULID主キーを持つタスクテーブル**
+- **リアルタイム監視用の進捗追跡テーブル**
+- **パフォーマンス最適化用のインデックス**
+- **タスク階層管理と計算用の関数**
+- **テスト・デモ用のサンプルデータ**
 
-**Automatic Initialization Process:**
+**自動初期化プロセス:**
 ```bash
-# Schema files are automatically executed on first startup
-# Location: ./db/init/01_schema.sql and ./db/init/02_sample_data.sql
+# スキーマファイルは初回起動時に自動実行されます
+# 場所: ./db/init/01_schema.sql and ./db/init/02_sample_data.sql
 
-# Check initialization logs
+# 初期化ログの確認
 docker-compose logs postgres | grep -i "database system is ready"
 ```
 
-**Manual schema inspection:**
+**手動スキーマ検査:**
 ```bash
-# PostgreSQL - View table structure
+# PostgreSQL - テーブル構造の表示
 docker exec claude-company-db psql -U claude_user -d claude_company -c "\\dt"
 
-# PostgreSQL - Check specific table details
+# PostgreSQL - 特定テーブルの詳細確認
 docker exec claude-company-db psql -U claude_user -d claude_company -c "\\d tasks"
 
 ```
 
-### **5. Development Environment Configuration**
+### **5. 開発環境設定 (Development Environment Configuration)**
 
-#### **Recommended Development Settings**
+#### **推奨開発設定 (Recommended Development Settings)**
 
-For development work, use these optimized settings:
+開発作業用の最適化された設定：
 
 ```bash
-# Development .env configuration
+# 開発用.env設定
 cat > .env << 'EOF'
 # Database (Development optimized)
 DB_HOST=localhost
@@ -434,138 +434,138 @@ SEED_DATABASE=true
 EOF
 ```
 
-#### **Performance Tuning for Development**
+#### **開発用パフォーマンスチューニング (Performance Tuning for Development)**
 
 ```bash
-# PostgreSQL development optimizations
+# PostgreSQL開発最適化
 docker exec claude-company-db psql -U claude_user -d claude_company -c "
-  -- Increase work memory for complex queries
+  -- 複雑なクエリ用のワークメモリ増加
   ALTER SYSTEM SET work_mem = '64MB';
   
-  -- Enable query logging for debugging
+  -- デバッグ用クエリログ有効化
   ALTER SYSTEM SET log_statement = 'all';
   ALTER SYSTEM SET log_min_duration_statement = 1000;
   
-  -- Reload configuration
+  -- 設定のリロード
   SELECT pg_reload_conf();
 "
 ```
 
-### **6. Troubleshooting Common Issues**
+### **6. よくある問題のトラブルシューティング (Troubleshooting Common Issues)**
 
-#### **🔴 Database Connection Issues**
+#### **🔴 データベース接続問題 (Database Connection Issues)**
 
-**Problem**: "Connection refused" errors
+**問題**: "Connection refused"エラー
 ```bash
-# Solution 1: Check if containers are running
+# 解決策1: コンテナが動作しているか確認
 docker-compose ps
 
-# Solution 2: Verify port availability
+# 解決策2: ポートの利用可能性を確認
 netstat -tulpn | grep :5432
 
-# Solution 3: Restart services with clean state
+# 解決策3: クリーンな状態でサービスを再起動
 docker-compose down -v && docker-compose up -d
 ```
 
-**Problem**: "Password authentication failed"
+**問題**: "Password authentication failed"
 ```bash
-# Solution: Reset database container
+# 解決策: データベースコンテナのリセット
 docker-compose down
 docker volume rm claude-company_postgres_data
 docker-compose up -d postgres
 ```
 
-#### **🔴 Docker Issues**
+#### **🔴 Docker問題 (Docker Issues)**
 
-**Problem**: "Port already in use"
+**問題**: "Port already in use"
 ```bash
-# Find process using the port
+# ポートを使用しているプロセスを探す
 lsof -i :5432
 
-# Kill the process or change port in docker-compose.yml
-# Example: Change "5432:5432" to "5433:5432"
+# プロセスを終了するか、docker-compose.ymlでポートを変更
+# 例: "5432:5432"を"5433:5432"に変更
 ```
 
-**Problem**: "Volume mount failed"
+**問題**: "Volume mount failed"
 ```bash
-# Ensure Docker has permission to access project directory
-# On macOS: Docker Desktop > Settings > Resources > File Sharing
-# On Linux: Check SELinux/AppArmor permissions
+# Dockerがプロジェクトディレクトリにアクセス権限を持っていることを確認
+# macOS: Docker Desktop > Settings > Resources > File Sharing
+# Linux: SELinux/AppArmorの権限を確認
 ```
 
-#### **🔴 Performance Issues**
+#### **🔴 パフォーマンス問題 (Performance Issues)**
 
-**Problem**: Slow database queries
+**問題**: データベースクエリが遅い
 ```bash
-# Check database stats
+# データベース統計の確認
 docker exec claude-company-db psql -U claude_user -d claude_company -c "
   SELECT schemaname, tablename, attname, n_distinct, correlation 
   FROM pg_stats WHERE tablename = 'tasks';
 "
 
-# Analyze query performance
+# クエリパフォーマンスの分析
 docker exec claude-company-db psql -U claude_user -d claude_company -c "
   EXPLAIN ANALYZE SELECT * FROM tasks WHERE status = 'pending';
 "
 ```
 
-#### **🔴 Web Interface Issues**
+#### **🔴 Webインターフェース問題 (Web Interface Issues)**
 
-**Problem**: Cannot access pgAdmin
+**問題**: pgAdminにアクセスできない
 ```bash
-# Check container logs
+# コンテナログの確認
 docker-compose logs pgadmin
 
-# Verify correct URL and ports
+# 正しいURLとポートの確認
 echo "pgAdmin: http://localhost:8080"
 
-# Clear browser cache and try again
+# ブラウザキャッシュをクリアして再試行
 ```
 
-### **7. Quick Health Check Commands**
+### **7. クイックヘルスチェックコマンド (Quick Health Check Commands)**
 
 ```bash
-# Complete system health check
+# 完全なシステムヘルスチェック
 #!/bin/bash
 echo "=== Claude Company Database Health Check ==="
 
-# Check Docker
+# Dockerの確認
 echo "Docker version: $(docker --version)"
 
-# Check containers
+# コンテナの確認
 echo -e "\nContainer status:"
 docker-compose ps
 
-# Check database connectivity
+# データベース接続の確認
 echo -e "\nDatabase connectivity:"
 docker exec claude-company-db psql -U claude_user -d claude_company -c "SELECT 'PostgreSQL Connected' as status;"
 
-# Check web interfaces
+# Webインターフェースの確認
 echo -e "\nWeb interface availability:"
 curl -s -o /dev/null -w "pgAdmin: %{http_code}\n" http://localhost:8080
 
 echo -e "\nSetup complete! ✅"
 ```
 
-## 🌐 API Usage Guide
+## 🌐 API使用ガイド
 
-### **Starting the API Server**
+### **APIサーバーの起動**
 
 ```bash
-# Start with database enabled
+# データベースを有効にして起動
 ./bin/ccs --api --port 8081
 
-# Or with environment variables
+# または環境変数を使用
 PORT=8081 ./bin/ccs --api
 ```
 
-**API Base URL:** `http://localhost:8081/api/v1`
+**API ベースURL:** `http://localhost:8081/api/v1`
 
-### **Core Task Management Endpoints**
+### **コアタスク管理エンドポイント**
 
-#### **Create Task**
+#### **タスク作成**
 ```bash
-# Create main task
+# メインタスク作成
 curl -X POST http://localhost:8081/api/v1/tasks \
   -H "Content-Type: application/json" \
   -d '{
@@ -575,7 +575,7 @@ curl -X POST http://localhost:8081/api/v1/tasks \
     "priority": 3
   }'
 
-# Create subtask
+# サブタスク作成
 curl -X POST http://localhost:8081/api/v1/tasks \
   -H "Content-Type: application/json" \
   -d '{
@@ -587,24 +587,24 @@ curl -X POST http://localhost:8081/api/v1/tasks \
   }'
 ```
 
-#### **Get Tasks**
+#### **タスク取得**
 ```bash
-# Get tasks by pane
+# ペーン別でタスク取得
 curl "http://localhost:8081/api/v1/tasks?pane_id=pane_1"
 
-# Get tasks by status
+# ステータス別でタスク取得
 curl "http://localhost:8081/api/v1/tasks?status=in_progress"
 
-# Get child tasks
+# 子タスク取得
 curl "http://localhost:8081/api/v1/tasks?parent_id=01HXAMPLE123456789"
 
-# Get specific task
+# 特定タスク取得
 curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789"
 ```
 
-#### **Update Task**
+#### **タスク更新**
 ```bash
-# Update task details
+# タスク詳細更新
 curl -X PUT http://localhost:8081/api/v1/tasks/01HXAMPLE123456789 \
   -H "Content-Type: application/json" \
   -d '{
@@ -613,27 +613,27 @@ curl -X PUT http://localhost:8081/api/v1/tasks/01HXAMPLE123456789 \
     "result": "Middleware implemented successfully"
   }'
 
-# Update just status
+# ステータスのみ更新
 curl -X PATCH http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/status/completed
 
-# Update status with propagation to related tasks
+# 関連タスクへの伝播を含むステータス更新
 curl -X PATCH http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/status-propagate/completed
 ```
 
-#### **Task Hierarchy**
+#### **タスク階層**
 ```bash
-# Get complete task hierarchy
+# 完全なタスク階層取得
 curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/hierarchy"
 ```
 
-### **Progress Monitoring Endpoints**
+### **進捗監視エンドポイント**
 
-#### **Get Progress Summary**
+#### **進捗サマリー取得**
 ```bash
-# Get progress for specific pane
+# 特定ペーンの進捗取得
 curl "http://localhost:8081/api/v1/progress?pane_id=pane_1"
 
-# Response example:
+# レスポンス例:
 {
   "total_tasks": 10,
   "completed_tasks": 7,
@@ -643,18 +643,18 @@ curl "http://localhost:8081/api/v1/progress?pane_id=pane_1"
 }
 ```
 
-#### **Get Task Statistics**
+#### **タスク統計取得**
 ```bash
-# Get detailed statistics
+# 詳細統計取得
 curl "http://localhost:8081/api/v1/statistics?pane_id=pane_1"
 ```
 
-## 🤝 Task Sharing Features
+## 🤝 タスク共有機能
 
-### **Share Individual Tasks**
+### **個別タスク共有**
 
 ```bash
-# Share task with specific pane
+# 特定ペーンとタスク共有
 curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share \
   -H "Content-Type: application/json" \
   -d '{
@@ -662,49 +662,49 @@ curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share \
     "permission": "write"
   }'
 
-# Share with all sibling tasks (same parent)
+# 兄弟タスク全てと共有（同じ親）
 curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share-siblings
 
-# Share with entire task family (parent + children)
+# タスクファミリー全体と共有（親+子）
 curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share-family
 ```
 
-### **Manage Task Shares**
+### **タスク共有管理**
 
 ```bash
-# Get all shares for a task
+# タスクの全ての共有取得
 curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/shares"
 
-# Get all tasks shared with a pane
+# ペーンと共有されている全タスク取得
 curl "http://localhost:8081/api/v1/shared-tasks?pane_id=pane_2"
 
-# Remove share
+# 共有削除
 curl -X DELETE http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share/pane_2
 ```
 
-### **Permission Levels**
-- **`read`**: View task details only (default)
-- **`write`**: Can update task status and add progress
-- **`admin`**: Full control including sharing and deletion
+### **権限レベル**
+- **`read`**: タスク詳細の閲覧のみ（デフォルト）
+- **`write`**: タスクステータス更新と進捗追加が可能
+- **`admin`**: 共有と削除を含む完全制御
 
-## ⚡ Asynchronous Execution Guide
+## ⚡ 非同期実行ガイド
 
-### **Async Task Processing**
+### **非同期タスク処理**
 
-Claude Company supports asynchronous task execution for background processing and parallel work distribution:
+Claude Companyはバックグラウンド処理と並列作業分散のための非同期タスク実行をサポートしています：
 
-#### **1. Enable Async Mode**
+#### **1. 非同期モード有効化**
 ```bash
-# Start with async processing enabled
+# 非同期処理を有効にして起動
 ./bin/ccs --async --workers 4
 
-# Or combine with API mode
+# またはAPIモードと組み合わせ
 ./bin/ccs --api --async --workers 4
 ```
 
-#### **2. Create Async Tasks**
+#### **2. 非同期タスク作成**
 ```bash
-# Create task with async flag
+# 非同期フラグ付きタスク作成
 curl -X POST http://localhost:8081/api/v1/tasks \
   -H "Content-Type: application/json" \
   -d '{
@@ -716,20 +716,20 @@ curl -X POST http://localhost:8081/api/v1/tasks \
   }'
 ```
 
-#### **3. Monitor Async Progress**
+#### **3. 非同期進捗監視**
 ```bash
-# Check async task status
+# 非同期タスクステータス確認
 curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789"
 
-# Monitor all async tasks
+# 全ての非同期タスク監視
 curl "http://localhost:8081/api/v1/tasks?status=in_progress"
 ```
 
-### **Async Execution Patterns**
+### **非同期実行パターン**
 
-#### **Parallel Task Distribution**
+#### **並列タスク分散**
 ```bash
-# Create parent task
+# 親タスク作成
 PARENT_ID=$(curl -X POST http://localhost:8081/api/v1/tasks \
   -H "Content-Type: application/json" \
   -d '{
@@ -738,7 +738,7 @@ PARENT_ID=$(curl -X POST http://localhost:8081/api/v1/tasks \
     "pane_id": "manager_pane"
   }' | jq -r '.id')
 
-# Create multiple async subtasks
+# 複数の非同期サブタスク作成
 for i in {1..4}; do
   curl -X POST http://localhost:8081/api/v1/tasks \
     -H "Content-Type: application/json" \
@@ -751,143 +751,143 @@ for i in {1..4}; do
 done
 ```
 
-#### **Task Coordination with Auto-sharing**
+#### **自動共有によるタスク協調**
 ```bash
-# Create coordinated task that auto-shares with family
+# ファミリーと自動共有する協調タスク作成
 curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share-family
 
-# All related tasks now have visibility into each other's progress
+# 関連タスク全てが互いの進捗を可視化
 ```
 
-### **Health Check & Service Status**
+### **ヘルスチェック&サービス状態**
 ```bash
-# Check API health
+# API健全性確認
 curl "http://localhost:8081/health"
 
-# Response:
+# レスポンス:
 {
   "status": "ok",
   "message": "Claude Company API is running"
 }
 ```
 
-## 🔄 Database Management
+## 🔄 データベース管理
 
-### **Stop/Start Services**
+### **サービス停止/開始**
 ```bash
-# Stop all services
+# 全サービス停止
 docker-compose down
 
-# Stop and remove volumes (clears all data)
+# ボリューム削除して停止（全データクリア）
 docker-compose down -v
 
-# Restart services
+# サービス再起動
 docker-compose restart
 
-# View resource usage
+# リソース使用量表示
 docker-compose top
 ```
 
-### **Backup & Restore**
+### **バックアップ&復元**
 ```bash
-# Backup database
+# データベースバックアップ
 docker exec claude-company-db pg_dump -U claude_user claude_company > backup.sql
 
-# Restore database
+# データベース復元
 docker exec -i claude-company-db psql -U claude_user claude_company < backup.sql
 ```
 
-## 🎭 Real-World Example
+## 🎭 実世界での例
 
-Let's say you want to add a user authentication system:
+ユーザー認証システムを追加したい場合：
 
 ```bash
 ./bin/ccs --task "Add JWT-based user authentication with registration, login, and protected routes"
 ```
 
-**What happens automatically:**
+**自動的に起こること：**
 
-1. **Manager Analysis** (Parent Pane):
-   - "I need to break this into: user models, JWT service, auth middleware, registration endpoint, login endpoint, and tests"
+1. **マネージャー分析**（親ペーン）：
+   - 「これを分割する必要がある：ユーザーモデル、JWTサービス、認証ミドルウェア、登録エンドポイント、ログインエンドポイント、テスト」
 
-2. **Worker Creation & Assignment**:
-   - Creates 3 child panes
-   - Assigns backend work to Worker #1
-   - Assigns testing to Worker #2  
-   - Assigns integration to Worker #3
+2. **ワーカー作成&割り当て**：
+   - 3つの子ペーンを作成
+   - バックエンド作業をワーカー#1に割り当て
+   - テストをワーカー#2に割り当て
+   - 統合をワーカー#3に割り当て
 
-3. **Parallel Implementation**:
-   - Worker #1: Creates user models, JWT functions, endpoints
-   - Worker #2: Writes unit tests and integration tests
-   - Worker #3: Sets up middleware and route protection
+3. **並列実装**：
+   - ワーカー#1：ユーザーモデル、JWT関数、エンドポイント作成
+   - ワーカー#2：ユニットテストと統合テスト作成
+   - ワーカー#3：ミドルウェアとルート保護設定
 
-4. **Quality Control**:
-   - Manager reviews each component
-   - Requests modifications if needed
-   - Coordinates final integration testing
+4. **品質管理**：
+   - マネージャーが各コンポーネントをレビュー
+   - 必要に応じて修正要求
+   - 最終統合テストを協調
 
-5. **Completion**:
-   - All code is working and tested
-   - Build passes successfully
-   - Features are ready to use
+5. **完了**：
+   - 全コードが動作しテスト済み
+   - ビルドが成功
+   - 機能が使用可能
 
-## 🚨 Troubleshooting
+## 🚨 トラブルシューティング
 
-### **Common Issues**
+### **一般的な問題**
 
 **❌ "tmux: command not found"**
 ```bash
-# Install tmux first
+# 最初にtmuxをインストール
 brew install tmux      # macOS
 sudo apt install tmux  # Ubuntu
 ```
 
 **❌ "claude: command not found"**
 ```bash
-# Install Claude CLI following official documentation
-# Ensure it's available in your PATH
+# 公式ドキュメントに従ってClaude CLIをインストール
+# PATHに含まれていることを確認
 ```
 
-**❌ Panes not responding**
+**❌ ペーンが応答しない**
 ```bash
-# Check if Claude is running in each pane
+# 各ペーンでClaudeが実行されているか確認
 tmux list-panes -s -t claude-squad -F '#{pane_id}: #{pane_current_command}'
 
-# Restart session if needed
+# 必要に応じてセッション再起動
 ./bin/ccs --setup
 ```
 
-**❌ Tasks not being distributed**
+**❌ タスクが分散されない**
 ```bash
-# Ensure at least 2 panes exist for manager/worker separation
-# Manager needs worker panes to delegate tasks to
+# マネージャー/ワーカー分離のために少なくとも2つのペーンが存在することを確認
+# マネージャーにはタスクを委譲するワーカーペーンが必要
 ```
 
-## 🤝 Contributing
+## 🤝 貢献ガイドライン
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
+貢献を歓迎します！詳細は[貢献ガイドライン](CONTRIBUTING.md)をご覧ください。
 
-### **Development Setup**
+### **開発環境セットアップ**
 ```bash
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
 go mod tidy
 go build -o bin/ccs
-./bin/ccs --task "Help improve this project"  # Meta! 😄
+./bin/ccs --task "Help improve this project"  # メタ！😄
 ```
 
-## 📄 License
+## 📄 ライセンス
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - 詳細は[LICENSE](LICENSE)ファイルをご覧ください。
 
-## 🙏 Acknowledgments
+## 🙏 謝辞
 
-- **Claude AI** for making intelligent collaboration possible
-- **tmux** for robust terminal multiplexing
-- **Go community** for excellent tooling and libraries
+- **Claude AI** - インテリジェントなコラボレーションを可能にしてくれて
+- **tmux** - 堅牢なターミナル多重化のために
+- **Goコミュニティ** - 優秀なツールとライブラリのために
 
 ---
 
-**Transform your development workflow with AI-powered team collaboration** 🚀
+**AI駆動のチームコラボレーションで開発ワークフローを変革しよう** 🚀
 
-*Made with ❤️ for developers who want to work with AI, not just use it*
+*AIと協働したい、単に使うだけではない開発者のために❤️で作成*

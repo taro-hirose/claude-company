@@ -1,6 +1,7 @@
 package session
 
 import (
+	"claude-company/internal/utils"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,16 +12,19 @@ import (
 type Manager struct {
 	SessionName   string
 	ClaudeCmd     string
-	ParentPanes   map[string]bool  // 親ペイン追跡マップ
+	ParentPanes   map[string]bool  // 親ペイン追跡マップ（レガシー）
 	InitialPanes  []string         // 初期ペイン状態
+	paneFilter    *utils.PaneFilter // 統一ペインフィルター
 }
 
 func NewManager(sessionName, claudeCmd string) *Manager {
+	parentPanes := make(map[string]bool)
 	return &Manager{
 		SessionName:  sessionName,
 		ClaudeCmd:    claudeCmd,
-		ParentPanes:  make(map[string]bool),
+		ParentPanes:  parentPanes,
 		InitialPanes: []string{},
+		paneFilter:   utils.NewPaneFilterWithLegacySupport(parentPanes),
 	}
 }
 
@@ -79,6 +83,7 @@ func (m *Manager) createSession() error {
 }
 
 func (m *Manager) setupPanes() error {
+	// ペイン分割
 	commands := [][]string{
 		{"tmux", "split-window", "-v", "-t", m.SessionName + ":0.0"},
 	}
@@ -87,6 +92,59 @@ func (m *Manager) setupPanes() error {
 		cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to execute %v: %w", cmdArgs, err)
+		}
+	}
+
+	// ペインタイトルを設定
+	if err := m.setPaneTitles(); err != nil {
+		return fmt.Errorf("failed to set pane titles: %w", err)
+	}
+
+	return nil
+}
+
+// setPaneTitles は各ペインに適切なタイトルを設定
+func (m *Manager) setPaneTitles() error {
+	// 現在のペイン一覧を取得
+	cmd := exec.Command("tmux", "list-panes", "-s", "-t", m.SessionName, "-F", "#{pane_id}|#{pane_index}")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get panes: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		
+		parts := strings.Split(line, "|")
+		if len(parts) != 2 {
+			continue
+		}
+		
+		paneID := parts[0]
+		paneIndex := parts[1]
+		
+		var title string
+		switch paneIndex {
+		case "0":
+			// 上部ペイン（最初のペイン）をコンソールペインとして設定
+			title = "[CONSOLE] コンソールペイン"
+		case "1":
+			// 下部ペイン（分割されたペイン）をマネージャーペインとして設定
+			title = "[MANAGER] マネージャーペイン"
+		default:
+			// その他のペインはワーカーペインとして設定
+			title = "[WORKER] ワーカーペイン"
+		}
+		
+		titleCmd := exec.Command("tmux", "select-pane", "-t", paneID, "-T", title)
+		if err := titleCmd.Run(); err != nil {
+			fmt.Printf("⚠️  Warning: failed to set title for pane %s: %v\n", paneID, err)
+		} else {
+			fmt.Printf("✅ Set title for pane %s (%s): %s\n", paneID, paneIndex, title)
 		}
 	}
 
@@ -266,6 +324,7 @@ func (m *Manager) CreateNewPaneAndGetID() (string, error) {
 		return "", fmt.Errorf("failed to get panes after creation: %v", err)
 	}
 
+	var newPaneID string
 	for _, afterPane := range afterPanes {
 		found := false
 		for _, beforePane := range beforePanes {
@@ -275,11 +334,32 @@ func (m *Manager) CreateNewPaneAndGetID() (string, error) {
 			}
 		}
 		if !found {
-			return afterPane, nil
+			newPaneID = afterPane
+			break
 		}
 	}
 
-	return "", fmt.Errorf("failed to identify new pane ID")
+	if newPaneID == "" {
+		return "", fmt.Errorf("failed to identify new pane ID")
+	}
+
+	// 新しいペインにワーカータイトルを設定
+	if err := m.setWorkerPaneTitle(newPaneID); err != nil {
+		fmt.Printf("⚠️  Warning: failed to set title for new pane %s: %v\n", newPaneID, err)
+	}
+
+	return newPaneID, nil
+}
+
+// setWorkerPaneTitle は新しく作成されたペインにワーカータイトルを設定
+func (m *Manager) setWorkerPaneTitle(paneID string) error {
+	title := "[WORKER] ワーカーペイン"
+	titleCmd := exec.Command("tmux", "select-pane", "-t", paneID, "-T", title)
+	if err := titleCmd.Run(); err != nil {
+		return fmt.Errorf("failed to set worker title: %v", err)
+	}
+	fmt.Printf("✅ Set worker title for new pane %s: %s\n", paneID, title)
+	return nil
 }
 
 func (m *Manager) StartClaudeInNewPane(paneID string) error {
@@ -332,31 +412,49 @@ func (m *Manager) recordInitialPanes() error {
 	return nil
 }
 
-// IsParentPane は指定されたペインが親ペインかどうかを判定
+// IsParentPane は指定されたペインが親ペインかどうかを判定（統一フィルター使用）
 func (m *Manager) IsParentPane(paneID string) bool {
-	return m.ParentPanes[paneID]
+	return m.paneFilter.IsParentPane(paneID)
 }
 
-// IsChildPane は指定されたペインが子ペインかどうかを判定（差分検出）
+// IsChildPane は指定されたペインが子ペインかどうかを判定（統一フィルター使用）
 func (m *Manager) IsChildPane(paneID string) bool {
-	return !m.ParentPanes[paneID]
+	return m.paneFilter.IsChildPane(paneID)
 }
 
-// GetChildPanes は子ペイン一覧を取得
+// IsWorkerPane はワーカーペインかどうかを判定（統一フィルター使用）
+func (m *Manager) IsWorkerPane(paneID string) bool {
+	return m.paneFilter.IsWorkerPane(paneID)
+}
+
+// IsManagerPane は管理ペインかどうかを判定（統一フィルター使用）
+func (m *Manager) IsManagerPane(paneID string) bool {
+	return m.paneFilter.IsManagerPane(paneID)
+}
+
+// IsConsolePane はコンソールペインかどうかを判定（統一フィルター使用）
+func (m *Manager) IsConsolePane(paneID string) bool {
+	return m.paneFilter.IsConsolePane(paneID)
+}
+
+// GetPaneType はペインタイプを取得（統一フィルター使用）
+func (m *Manager) GetPaneType(paneID string) utils.PaneType {
+	return m.paneFilter.GetPaneType(paneID)
+}
+
+// GetChildPanes は子ペイン一覧を取得（統一フィルター使用）
 func (m *Manager) GetChildPanes() ([]string, error) {
-	allPanes, err := m.GetPanes()
-	if err != nil {
-		return nil, err
-	}
-	
-	var childPanes []string
-	for _, pane := range allPanes {
-		if m.IsChildPane(pane) {
-			childPanes = append(childPanes, pane)
-		}
-	}
-	
-	return childPanes, nil
+	return m.paneFilter.GetWorkerPanes()
+}
+
+// GetManagerPanes は管理ペイン一覧を取得（統一フィルター使用）
+func (m *Manager) GetManagerPanes() ([]string, error) {
+	return m.paneFilter.GetManagerPanes()
+}
+
+// GetConsolePanes はコンソールペイン一覧を取得（統一フィルター使用）
+func (m *Manager) GetConsolePanes() ([]string, error) {
+	return m.paneFilter.GetConsolePanes()
 }
 
 // SendToChildPaneOnly は子ペインにのみタスクを送信
@@ -376,15 +474,27 @@ func (m *Manager) SendToChildPaneOnly(command string) error {
 	return m.SendToPane(targetPane, command)
 }
 
-// SendToFilteredPane はペインフィルタリング付きでタスクを送信
+// SendToFilteredPane はペインフィルタリング付きでタスクを送信（統一フィルター使用）
 func (m *Manager) SendToFilteredPane(paneID, command string) error {
-	if m.IsParentPane(paneID) {
-		fmt.Printf("⚠️  Blocked task assignment to parent pane %s\n", paneID)
-		fmt.Println("🔄 Redirecting to child pane...")
-		return m.SendToChildPaneOnly(command)
+	// タスク割り当ての妥当性を検証
+	isValid, message, err := m.paneFilter.ValidateTaskAssignment(command, paneID)
+	if err != nil {
+		return fmt.Errorf("validation failed: %v", err)
 	}
 	
-	fmt.Printf("✅ Task assigned to child pane %s\n", paneID)
+	if !isValid {
+		fmt.Printf("⚠️  %s\n", message)
+		// 最適なペインを取得
+		bestPane, err := m.paneFilter.GetBestPaneForTask(command)
+		if err != nil {
+			return fmt.Errorf("failed to find suitable pane: %v", err)
+		}
+		fmt.Printf("🔄 Redirecting task to pane %s\n", bestPane)
+		paneID = bestPane
+	} else {
+		fmt.Printf("✅ %s\n", message)
+	}
+	
 	return m.SendToPane(paneID, command)
 }
 

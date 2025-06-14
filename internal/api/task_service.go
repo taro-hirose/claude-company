@@ -7,17 +7,20 @@ import (
 	"claude-company/internal/database"
 	"claude-company/internal/models"
 	"claude-company/internal/session"
+	"claude-company/internal/utils"
 )
 
 type TaskService struct {
 	repo           *database.TaskRepository
 	sessionManager *session.Manager
+	paneFilter     *utils.PaneFilter // 統一ペインフィルター
 }
 
 func NewTaskService(sessionManager *session.Manager) *TaskService {
 	return &TaskService{
 		repo:           database.NewTaskRepository(),
 		sessionManager: sessionManager,
+		paneFilter:     utils.NewPaneFilter(),
 	}
 }
 
@@ -276,81 +279,36 @@ func (tf *TaskFilter) ClassifyTask(description string) string {
 	return "unknown"
 }
 
-// FilterAndAssignTask はタスクをフィルタリングして適切なペインに割り当て
+// FilterAndAssignTask はタスクをフィルタリングして適切なペインに割り当て（統一フィルター使用）
 func (s *TaskService) FilterAndAssignTask(taskDescription, requestedPaneID string) (string, error) {
-	if s.sessionManager == nil {
-		return requestedPaneID, fmt.Errorf("session manager not available")
+	// タスク割り当ての妥当性を検証
+	isValid, message, err := s.paneFilter.ValidateTaskAssignment(taskDescription, requestedPaneID)
+	if err != nil {
+		return requestedPaneID, fmt.Errorf("validation failed: %v", err)
 	}
 	
-	filter := NewTaskFilter()
-	taskType := filter.ClassifyTask(taskDescription)
-	
-	// 親ペインかどうかをチェック
-	if s.sessionManager.IsParentPane(requestedPaneID) {
-		fmt.Printf("⚠️  Task '%s' blocked from parent pane %s\n", taskType, requestedPaneID)
-		
-		switch taskType {
-		case "implementation":
-			// 実装タスクは子ペインにリダイレクト
-			childPanes, err := s.sessionManager.GetChildPanes()
-			if err != nil {
-				return "", fmt.Errorf("failed to get child panes: %v", err)
-			}
-			
-			if len(childPanes) == 0 {
-				// 子ペインが存在しない場合は新しく作成
-				newPaneID, err := s.sessionManager.CreateNewPaneAndRegisterAsChild()
-				if err != nil {
-					return "", fmt.Errorf("failed to create new child pane: %v", err)
+	if !isValid {
+		fmt.Printf("⚠️  %s\n", message)
+		// 最適なペインを取得
+		bestPane, err := s.paneFilter.GetBestPaneForTask(taskDescription)
+		if err != nil {
+			// フォールバック: 子ペインを作成
+			if strings.Contains(err.Error(), "no worker panes available") {
+				newPaneID, createErr := s.sessionManager.CreateNewPaneAndRegisterAsChild()
+				if createErr != nil {
+					return requestedPaneID, fmt.Errorf("failed to create new pane: %v", createErr)
 				}
-				fmt.Printf("🔄 Created new child pane %s for implementation task\n", newPaneID)
+				fmt.Printf("🔄 Created new worker pane %s for task\n", newPaneID)
 				return newPaneID, nil
 			}
-			
-			// 既存の子ペインに割り当て
-			targetPane := childPanes[0]
-			fmt.Printf("🔄 Redirected implementation task to child pane %s\n", targetPane)
-			return targetPane, nil
-			
-		case "management":
-			// 管理タスクは親ペインで処理を許可
-			fmt.Printf("✅ Management task allowed in parent pane %s\n", requestedPaneID)
-			return requestedPaneID, nil
-			
-		case "review":
-			// レビュータスクは親ペインで処理を許可
-			fmt.Printf("✅ Review task allowed in parent pane %s\n", requestedPaneID)
-			return requestedPaneID, nil
-			
-		default:
-			// 不明なタスクは子ペインにリダイレクト
-			fmt.Printf("🔄 Unknown task type redirected to child pane\n")
-			return s.redirectToChildPane()
+			return requestedPaneID, fmt.Errorf("failed to find suitable pane: %v", err)
 		}
+		fmt.Printf("🔄 Redirected task to pane %s\n", bestPane)
+		return bestPane, nil
 	}
 	
-	// 子ペインの場合はそのまま許可
-	fmt.Printf("✅ Task assigned to child pane %s\n", requestedPaneID)
+	fmt.Printf("✅ %s\n", message)
 	return requestedPaneID, nil
-}
-
-// redirectToChildPane は子ペインにタスクをリダイレクト
-func (s *TaskService) redirectToChildPane() (string, error) {
-	childPanes, err := s.sessionManager.GetChildPanes()
-	if err != nil {
-		return "", fmt.Errorf("failed to get child panes: %v", err)
-	}
-	
-	if len(childPanes) == 0 {
-		// 子ペインが存在しない場合は新しく作成
-		newPaneID, err := s.sessionManager.CreateNewPaneAndRegisterAsChild()
-		if err != nil {
-			return "", fmt.Errorf("failed to create new child pane: %v", err)
-		}
-		return newPaneID, nil
-	}
-	
-	return childPanes[0], nil
 }
 
 // EnforceRoleBasedAssignment は役割ベースのタスク割り当てを強制
@@ -372,23 +330,7 @@ func (s *TaskService) EnforceRoleBasedAssignment(taskDescription, requestedPaneI
 	return s.sessionManager.SendToFilteredPane(assignedPaneID, taskDescription)
 }
 
-// ValidateTaskAssignment はタスク割り当ての妥当性を検証
+// ValidateTaskAssignment はタスク割り当ての妥当性を検証（統一フィルター使用）
 func (s *TaskService) ValidateTaskAssignment(taskDescription, paneID string) (bool, string, error) {
-	if s.sessionManager == nil {
-		return false, "", fmt.Errorf("session manager not available")
-	}
-	
-	filter := NewTaskFilter()
-	taskType := filter.ClassifyTask(taskDescription)
-	isParent := s.sessionManager.IsParentPane(paneID)
-	
-	if isParent && taskType == "implementation" {
-		return false, "Implementation tasks should not be executed in parent panes", nil
-	}
-	
-	if !isParent && taskType == "management" {
-		return false, "Management tasks should be executed in parent panes", nil
-	}
-	
-	return true, fmt.Sprintf("Task type '%s' is appropriate for pane %s", taskType, paneID), nil
+	return s.paneFilter.ValidateTaskAssignment(taskDescription, paneID)
 }

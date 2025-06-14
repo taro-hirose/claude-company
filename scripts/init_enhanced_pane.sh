@@ -99,6 +99,13 @@ collect_context() {
         export CURRENT_SESSION="${TMUX_SESSION:-unknown}"
     }
     
+    # Set worker pane title for identification
+    if [ -n "${TMUX_PANE:-}" ]; then
+        WORKER_ID=$(echo "$TMUX_PANE" | sed 's/%//')
+        set_worker_pane_title "Worker-$WORKER_ID"
+        log_success "Pane title set to: Worker-$WORKER_ID"
+    fi
+    
     # Discover session structure
     log_info "Discovering session structure..."
     discover_session_panes 2>/dev/null || log_warning "Could not discover session panes"
@@ -167,6 +174,87 @@ send_startup() {
     fi
 }
 
+# Set worker pane title helper function
+set_worker_pane_title() {
+    local title="${1:-AI-Worker}"
+    
+    if [ -n "${TMUX_PANE:-}" ]; then
+        tmux select-pane -t "$TMUX_PANE" -T "$title" 2>/dev/null || {
+            log_warning "Could not set pane title to: $title"
+            return 1
+        }
+        log_info "Pane title set to: $title"
+    else
+        log_warning "Not in tmux session - cannot set pane title"
+        return 1
+    fi
+}
+
+# Set console pane title (for the first pane - upper pane)
+set_console_pane_title() {
+    local pane_id="${1:-}"
+    local title="コンソールペイン"
+    
+    if [ -z "$pane_id" ]; then
+        # If no pane ID provided, try to get the first pane in the session
+        pane_id=$(tmux list-panes -t "$CURRENT_SESSION" -F "#{pane_id}" | head -1 2>/dev/null)
+    fi
+    
+    if [ -n "$pane_id" ]; then
+        tmux select-pane -t "$pane_id" -T "$title" 2>/dev/null || {
+            log_warning "Could not set console pane title to: $title"
+            return 1
+        }
+        log_success "Console pane title set to: $title (pane: $pane_id)"
+    else
+        log_warning "Could not identify console pane"
+        return 1
+    fi
+}
+
+# Set manager pane title (for the second pane - lower pane)
+set_manager_pane_title() {
+    local pane_id="${1:-}"
+    local title="マネージャーペイン"
+    
+    if [ -z "$pane_id" ]; then
+        # If no pane ID provided, try to get the second pane in the session
+        pane_id=$(tmux list-panes -t "$CURRENT_SESSION" -F "#{pane_id}" | sed -n '2p' 2>/dev/null)
+    fi
+    
+    if [ -n "$pane_id" ]; then
+        tmux select-pane -t "$pane_id" -T "$title" 2>/dev/null || {
+            log_warning "Could not set manager pane title to: $title"
+            return 1
+        }
+        log_success "Manager pane title set to: $title (pane: $pane_id)"
+    else
+        log_warning "Could not identify manager pane"
+        return 1
+    fi
+}
+
+# Auto-identify and set pane titles based on position
+setup_pane_titles() {
+    log_info "Setting up pane titles..."
+    
+    # Get all panes in the current session
+    local panes=($(tmux list-panes -t "$CURRENT_SESSION" -F "#{pane_id}" 2>/dev/null))
+    
+    if [ ${#panes[@]} -ge 2 ]; then
+        # Set console pane (first pane - upper)
+        set_console_pane_title "${panes[0]}"
+        
+        # Set manager pane (second pane - lower)  
+        set_manager_pane_title "${panes[1]}"
+        
+        log_success "Pane titles configured: ${#panes[@]} panes identified"
+    else
+        log_warning "Need at least 2 panes for console/manager setup"
+        return 1
+    fi
+}
+
 # Generate dynamic prompt
 generate_dynamic_prompt() {
     log_info "Generating dynamic prompt..."
@@ -185,6 +273,7 @@ generate_dynamic_prompt() {
 ## Current Session Context (Auto-Generated)
 
 **Pane ID**: ${CURRENT_PANE_ID}
+**Pane Title**: $(tmux list-panes -t "$TMUX_PANE" -F "#{pane_title}" 2>/dev/null || echo "Unknown")
 **Session**: ${CURRENT_SESSION}
 **Timestamp**: $(date)
 **Script Path**: ${SCRIPT_DIR}
@@ -232,6 +321,7 @@ create_summary() {
 
 **Initialization Time**: $(date)
 **Pane ID**: ${CURRENT_PANE_ID}
+**Pane Title**: $(tmux list-panes -t "$TMUX_PANE" -F "#{pane_title}" 2>/dev/null || echo "Unknown")
 **Session**: ${CURRENT_SESSION}
 **Script Directory**: ${SCRIPT_DIR}
 
@@ -242,10 +332,12 @@ create_summary() {
 - ✅ Inter-pane communication
 - ✅ Error handling and recovery
 - ✅ Task context awareness
+- ✅ Pane title identification system
 
 ## Available Commands:
 - get_my_tasks - Retrieve current tasks
 - get_shared_tasks - Get shared tasks
+- set_worker_pane_title - Set pane identification title
 - report_progress - Send progress updates
 - report_completion - Report task completion
 - report_error - Report issues
@@ -336,6 +428,7 @@ EOF
     check_prerequisites || return 1
     init_scripts || return 1
     collect_context
+    setup_pane_titles
     test_connectivity
     load_task_context
     send_startup

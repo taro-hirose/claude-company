@@ -40,6 +40,9 @@ create_child_pane() {
     NEW_PANE_ID=$(detect_new_pane)
     echo "✅ New pane created: $NEW_PANE_ID"
     
+    # ペインタイトル設定
+    set_pane_title "$NEW_PANE_ID" "Worker"
+    
     # Claude AI自動起動
     tmux send-keys -t "$NEW_PANE_ID" 'claude --dangerously-skip-permissions' Enter
     sleep 3
@@ -52,6 +55,9 @@ echo "🎯 === AUTOMATIC TASK DISPATCH SETUP ==="
 setup_auto_dispatch() {
     export AUTO_DISPATCH_ENABLED=true
     export MANAGER_PANE_ID="%0"
+    
+    # マネージャーペインタイトル設定
+    set_pane_title "%0" "Manager"
 }
 ```
 
@@ -121,11 +127,17 @@ get_panes_before
 # 新しいペイン検出
 detect_new_pane
 
+# ペインタイトル設定
+set_pane_title "PANE_ID" "Title Name"
+
 # 子ペイン一括作成
 create_multiple_child_panes 3
 
 # Claude実行中ペイン検出
 find_active_claude_panes
+
+# ペインタイトル一覧表示
+list_pane_titles
 ```
 
 ### タスク振り分けコマンド
@@ -249,6 +261,11 @@ balance_workload() {
 
 ---
 
+## 🚨 **ペイン送信制限** 🚨
+- コンソールペインとマネージャーペインには一切メッセージを送信しない
+- サブタスク送信前に必ずペインタイトルを確認する
+- 制限ペインへの送信を試みるとエラーが発生する
+
 ## 🚨 System-Enforced Role Separation
 
 **技術的制限により以下が強制されます：**
@@ -276,6 +293,8 @@ balance_workload() {
 | 機能 | コマンド | 説明 |
 |------|---------|------|
 | **ペイン検出** | `detect_new_pane` | 新規作成ペイン特定 |
+| **タイトル設定** | `set_pane_title "ID" "Title"` | ペインタイトル設定 |
+| **タイトル一覧** | `list_pane_titles` | 全ペインタイトル表示 |
 | **自動振り分け** | `smart_dispatch "task"` | インテリジェント配送 |
 | **負荷分散** | `balance_workload` | 動的負荷調整 |
 | **進捗監視** | `get_all_children_progress` | 全体進捗取得 |
