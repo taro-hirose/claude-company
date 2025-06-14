@@ -100,6 +100,7 @@ func (m *AIManager) buildManagerPrompt() string {
 新しいペインを作成したら、必ずClaude AIを起動してください：
 1. ペイン作成後：tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
 2. Claude起動確認後にサブタスクを送信
+3. サブタスクを送信後、新規ペインでエンターを1秒後に送信してタスクを実行
 
 ==== サブタスクの作成方法 ====
 必須条件：
@@ -107,14 +108,16 @@ func (m *AIManager) buildManagerPrompt() string {
 2. 親ペイン（%s）には絶対にサブタスクを送信しないこと（親ペインはマネージメント専用）
 
 サブタスク送信テンプレート：
+`+"`"+`
 サブタスク: [タスク名]
 目的: [このタスクで達成したいこと]
 期待する成果物: [具体的な成果物の説明]
 制約条件: [注意点や制約があれば]
 完了条件: [完了と判断する基準]
+`+"`"+`
 
 - サブタスクの作成方法：tmux send-keys -t 子ペインID '[ここにタスクの内容]' Enter
-
+- サブタスクを送信後、必ず送信先のペインでエンターを1秒後に送信してタスクを実行
 ==== タスク送信方法 ====
 各子ペイン（%sまたは新規作成）にサブタスクを送信する場合は、以下のコマンド形式を使用してください：
 tmux send-keys -t 子ペインID 'サブタスク: [具体的なサブタスク内容と期待する成果物]' Enter
@@ -158,7 +161,8 @@ tmux send-keys -t %s 'サブタスク: internal/models/user.goファイルを作
 		m.taskTracker.ManagerPane,
 		m.taskTracker.MainTask.Description,
 		m.taskTracker.ManagerPane,
-		claudePane, claudePane, claudePane)
+		m.taskTracker.ManagerPane,
+		claudePane, claudePane)
 }
 
 func (m *AIManager) AddSubTask(description, assignedPane string) (models.SubTask, error) {
