@@ -83,6 +83,10 @@ func printUsage() {
 }
 
 func listSessions() {
+	listSessionsImpl(true)
+}
+
+func listSessionsImpl(verbose bool) {
 	sessionManager := session.NewTmuxSessionManager()
 	sessions, err := sessionManager.ListSessions()
 	if err != nil {
@@ -99,16 +103,28 @@ func listSessions() {
 		return
 	}
 	
-	fmt.Printf("Active tmux sessions (%d):\n", len(sessions))
-	for i, sessionName := range sessions {
-		fmt.Printf("  %d. %s\n", i+1, sessionName)
+	if verbose {
+		fmt.Printf("Active tmux sessions (%d):\n", len(sessions))
+		for i, sessionName := range sessions {
+			fmt.Printf("  %d. %s\n", i+1, sessionName)
+		}
+	} else {
+		for _, sessionName := range sessions {
+			fmt.Println(sessionName)
+		}
 	}
 }
 
 func createSession(sessionName string) {
+	createSessionImpl(sessionName, true)
+}
+
+func createSessionImpl(sessionName string, verbose bool) {
 	sessionManager := session.NewTmuxSessionManager()
 	if sessionManager.SessionExists(sessionName) {
-		fmt.Printf("Session '%s' already exists\n", sessionName)
+		if verbose {
+			fmt.Printf("Session '%s' already exists\n", sessionName)
+		}
 		return
 	}
 	
@@ -121,9 +137,15 @@ func createSession(sessionName string) {
 }
 
 func attachSession(sessionName string) {
+	attachSessionImpl(sessionName, true)
+}
+
+func attachSessionImpl(sessionName string, verbose bool) {
 	sessionManager := session.NewTmuxSessionManager()
 	if !sessionManager.SessionExists(sessionName) {
-		fmt.Printf("Session '%s' does not exist\n", sessionName)
+		if verbose {
+			fmt.Printf("Session '%s' does not exist\n", sessionName)
+		}
 		return
 	}
 	
@@ -135,9 +157,15 @@ func attachSession(sessionName string) {
 }
 
 func killSession(sessionName string) {
+	killSessionImpl(sessionName, true)
+}
+
+func killSessionImpl(sessionName string, verbose bool) {
 	sessionManager := session.NewTmuxSessionManager()
 	if !sessionManager.SessionExists(sessionName) {
-		fmt.Printf("Session '%s' does not exist\n", sessionName)
+		if verbose {
+			fmt.Printf("Session '%s' does not exist\n", sessionName)
+		}
 		return
 	}
 	
@@ -242,52 +270,17 @@ func printCCSUsage() {
 }
 
 func listSessionsBasic() {
-	sessionManager := session.NewTmuxSessionManager()
-	sessions, err := sessionManager.ListSessions()
-	if err != nil {
-		if strings.Contains(err.Error(), "no server running") {
-			fmt.Println("No tmux sessions running")
-			return
-		}
-		fmt.Printf("Error listing sessions: %v\n", err)
-		return
-	}
-	
-	if len(sessions) == 0 {
-		fmt.Println("No tmux sessions running")
-		return
-	}
-	
-	for _, sessionName := range sessions {
-		fmt.Println(sessionName)
-	}
+	listSessionsImpl(false)
 }
 
 func createSessionBasic(sessionName string) {
-	sessionManager := session.NewTmuxSessionManager()
-	err := sessionManager.CreateSession(sessionName)
-	if err != nil {
-		fmt.Printf("Error creating session '%s': %v\n", sessionName, err)
-		return
-	}
-	fmt.Printf("Created session: %s\n", sessionName)
+	createSessionImpl(sessionName, false)
 }
 
 func attachSessionBasic(sessionName string) {
-	sessionManager := session.NewTmuxSessionManager()
-	err := sessionManager.AttachSession(sessionName)
-	if err != nil {
-		fmt.Printf("Error attaching to session '%s': %v\n", sessionName, err)
-		return
-	}
+	attachSessionImpl(sessionName, false)
 }
 
 func killSessionBasic(sessionName string) {
-	sessionManager := session.NewTmuxSessionManager()
-	err := sessionManager.KillSession(sessionName)
-	if err != nil {
-		fmt.Printf("Error killing session '%s': %v\n", sessionName, err)
-		return
-	}
-	fmt.Printf("Killed session: %s\n", sessionName)
+	killSessionImpl(sessionName, false)
 }

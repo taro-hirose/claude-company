@@ -1,27 +1,20 @@
 # Claude Company 🤖
 
-**AI-powered project management system with intelligent task delegation**
+**AI-powered tmux session management with intelligent task delegation**
 
-Claude Company transforms your development workflow by creating an AI-powered team where one Claude AI acts as a project manager, orchestrating multiple worker Claude AIs to collaboratively complete complex tasks.
+Claude Company provides a streamlined way to manage tmux sessions and delegate tasks to Claude AI within structured panes for collaborative development work.
 
 ## ✨ Key Features
-
-### 🎯 **AI Project Manager System**
-- **Smart Task Delegation**: Parent pane analyzes tasks and breaks them into manageable subtasks
-- **Intelligent Worker Management**: Automatically creates and manages child panes for parallel work
-- **Quality Control**: Built-in review system and integration testing
-- **Real-time Progress Monitoring**: Track completion status across all workers
 
 ### ⚡ **STORM Session Manager**
 - **Lightning-fast tmux session management**
 - **Cross-shell compatibility** (bash, zsh, fish)
 - **Clean command interface** for session lifecycle management
 
-### 🔄 **Automated Workflow**
+### 🔄 **AI Task Management**
 - **Role Separation**: Manager for oversight, workers for implementation
-- **Automatic Pane Creation**: Dynamic scaling based on task complexity
-- **Quality Assurance**: Mandatory code review and build testing
-- **Seamless Integration**: Built-in tmux and Claude AI integration
+- **Structured Pane Creation**: Creates organized workspace with manager and worker panes
+- **Task Assignment**: Simple interface for assigning tasks to AI workers
 
 ## 🚀 Quick Start
 
@@ -45,16 +38,9 @@ go build -o bin/ccs
 
 ### 3. Assign Tasks to AI Team
 ```bash
-# AI Manager Mode (full functionality with database)
-./bin/ccs --task "Implement user authentication system with JWT tokens"
+# Simple task assignment
+./bin/ccs --task "Implement user authentication system"
 ```
-
-### 4. Watch the Magic Happen
-1. **Manager pane** analyzes the task and creates a project plan
-2. **Worker panes** are automatically created and assigned specific subtasks
-3. **Implementation** happens in parallel across multiple Claude AIs
-4. **Quality control** - Manager reviews all work and coordinates testing
-5. **Integration** - Final build and validation
 
 ## 🏗️ Architecture Overview
 
@@ -126,11 +112,8 @@ go build -o bin/ccs
 ./bin/ccs
 ./bin/ccs --setup
 
-# Assign task to AI team (requires database)
+# Assign task to AI team
 ./bin/ccs --task "TASK_DESCRIPTION"
-
-# API server mode
-./bin/ccs --api
 ```
 
 ### **STORM Session Management**
@@ -190,7 +173,6 @@ go build -o bin/ccs
 - **Go 1.21+** for building from source
 - **tmux** - Required for pane management
 - **Claude AI access** - Via Claude CLI tool
-- **Docker & Docker Compose** - For database services
 - **Unix-like OS** - Linux, macOS, or WSL
 
 ### **Step-by-Step Installation**
@@ -198,10 +180,10 @@ go build -o bin/ccs
 1. **Install Dependencies**
 ```bash
 # macOS
-brew install tmux go docker
+brew install tmux go
 
 # Ubuntu/Debian  
-sudo apt install tmux golang-go docker.io docker-compose
+sudo apt install tmux golang-go
 
 # Install Claude CLI (follow official docs)
 ```
@@ -221,359 +203,14 @@ echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## 🗄️ Database Setup & Configuration
-
-### **1. Docker Compose Database Startup**
-
-Start the PostgreSQL database and pgAdmin interface:
-
-```bash
-# Start database services in background
-docker-compose up -d
-
-# View service status
-docker-compose ps
-
-# View logs
-docker-compose logs postgres
-docker-compose logs pgadmin
-```
-
-**Services Started:**
-- **PostgreSQL Database**: `localhost:5432`
-- **pgAdmin Web Interface**: `http://localhost:8080`
-
-### **2. Environment Variables**
-
-Configure database connection settings:
-
-```bash
-# Required environment variables
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_USER=claude_user
-export DB_PASSWORD=claude_password
-export DB_NAME=claude_company
-export DB_SSLMODE=disable
-
-# Optional API server settings
-export PORT=8081
-export GIN_MODE=release
-```
-
-**Or create a `.env` file:**
-```bash
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=claude_user
-DB_PASSWORD=claude_password
-DB_NAME=claude_company
-DB_SSLMODE=disable
-PORT=8081
-```
-
-### **3. Database Initialization**
-
-The database schema is automatically initialized when starting the PostgreSQL container. The initialization includes:
-
-- **Task tables** with hierarchical structure
-- **Progress tracking** tables
-- **Indexes** for performance optimization
-- **Functions** for task hierarchy management
-- **Sample data** for testing
-
-**Manual initialization (if needed):**
-```bash
-# Connect to database
-psql -h localhost -p 5432 -U claude_user -d claude_company
-
-# Or use pgAdmin at http://localhost:8080
-# Login: admin@claude-company.local / admin123
-```
-
-## 🌐 API Usage Guide
-
-### **Starting the API Server**
-
-```bash
-# Start with database enabled
-./bin/ccs --api --port 8081
-
-# Or with environment variables
-PORT=8081 ./bin/ccs --api
-```
-
-**API Base URL:** `http://localhost:8081/api/v1`
-
-### **Core Task Management Endpoints**
-
-#### **Create Task**
-```bash
-# Create main task
-curl -X POST http://localhost:8081/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Implement user authentication system",
-    "mode": "manager",
-    "pane_id": "pane_1",
-    "priority": 3
-  }'
-
-# Create subtask
-curl -X POST http://localhost:8081/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "parent_id": "01HXAMPLE123456789",
-    "description": "Create JWT middleware",
-    "mode": "worker",
-    "pane_id": "pane_2",
-    "priority": 2
-  }'
-```
-
-#### **Get Tasks**
-```bash
-# Get tasks by pane
-curl "http://localhost:8081/api/v1/tasks?pane_id=pane_1"
-
-# Get tasks by status
-curl "http://localhost:8081/api/v1/tasks?status=in_progress"
-
-# Get child tasks
-curl "http://localhost:8081/api/v1/tasks?parent_id=01HXAMPLE123456789"
-
-# Get specific task
-curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789"
-```
-
-#### **Update Task**
-```bash
-# Update task details
-curl -X PUT http://localhost:8081/api/v1/tasks/01HXAMPLE123456789 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Updated task description",
-    "status": "in_progress",
-    "result": "Middleware implemented successfully"
-  }'
-
-# Update just status
-curl -X PATCH http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/status/completed
-
-# Update status with propagation to related tasks
-curl -X PATCH http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/status-propagate/completed
-```
-
-#### **Task Hierarchy**
-```bash
-# Get complete task hierarchy
-curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/hierarchy"
-```
-
-### **Progress Monitoring Endpoints**
-
-#### **Get Progress Summary**
-```bash
-# Get progress for specific pane
-curl "http://localhost:8081/api/v1/progress?pane_id=pane_1"
-
-# Response example:
-{
-  "total_tasks": 10,
-  "completed_tasks": 7,
-  "pending_tasks": 2,
-  "in_progress_tasks": 1,
-  "progress_percent": 70.0
-}
-```
-
-#### **Get Task Statistics**
-```bash
-# Get detailed statistics
-curl "http://localhost:8081/api/v1/statistics?pane_id=pane_1"
-```
-
-## 🤝 Task Sharing Features
-
-### **Share Individual Tasks**
-
-```bash
-# Share task with specific pane
-curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share \
-  -H "Content-Type: application/json" \
-  -d '{
-    "pane_id": "pane_3",
-    "permission": "write"
-  }'
-
-# Share with all sibling tasks (same parent)
-curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share-siblings
-
-# Share with entire task family (parent + children)
-curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share-family
-```
-
-### **Manage Task Shares**
-
-```bash
-# Get all shares for a task
-curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/shares"
-
-# Get all tasks shared with a pane
-curl "http://localhost:8081/api/v1/shared-tasks?pane_id=pane_2"
-
-# Remove share
-curl -X DELETE http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share/pane_2
-```
-
-### **Permission Levels**
-- **`read`**: View task details only (default)
-- **`write`**: Can update task status and add progress
-- **`admin`**: Full control including sharing and deletion
-
-## ⚡ Asynchronous Execution Guide
-
-### **Async Task Processing**
-
-Claude Company supports asynchronous task execution for background processing and parallel work distribution:
-
-#### **1. Enable Async Mode**
-```bash
-# Start with async processing enabled
-./bin/ccs --async --workers 4
-
-# Or combine with API mode
-./bin/ccs --api --async --workers 4
-```
-
-#### **2. Create Async Tasks**
-```bash
-# Create task with async flag
-curl -X POST http://localhost:8081/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Process large dataset analysis",
-    "mode": "async_worker",
-    "pane_id": "async_1",
-    "priority": 1,
-    "metadata": "{\"async\": true, \"timeout\": 300}"
-  }'
-```
-
-#### **3. Monitor Async Progress**
-```bash
-# Check async task status
-curl "http://localhost:8081/api/v1/tasks/01HXAMPLE123456789"
-
-# Monitor all async tasks
-curl "http://localhost:8081/api/v1/tasks?status=in_progress"
-```
-
-### **Async Execution Patterns**
-
-#### **Parallel Task Distribution**
-```bash
-# Create parent task
-PARENT_ID=$(curl -X POST http://localhost:8081/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Parallel data processing job",
-    "mode": "manager",
-    "pane_id": "manager_pane"
-  }' | jq -r '.id')
-
-# Create multiple async subtasks
-for i in {1..4}; do
-  curl -X POST http://localhost:8081/api/v1/tasks \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"parent_id\": \"$PARENT_ID\",
-      \"description\": \"Process data chunk $i\",
-      \"mode\": \"async_worker\",
-      \"pane_id\": \"worker_$i\"
-    }"
-done
-```
-
-#### **Task Coordination with Auto-sharing**
-```bash
-# Create coordinated task that auto-shares with family
-curl -X POST http://localhost:8081/api/v1/tasks/01HXAMPLE123456789/share-family
-
-# All related tasks now have visibility into each other's progress
-```
-
-### **Health Check & Service Status**
-```bash
-# Check API health
-curl "http://localhost:8081/health"
-
-# Response:
-{
-  "status": "ok",
-  "message": "Claude Company API is running"
-}
-```
-
-## 🔄 Database Management
-
-### **Stop/Start Services**
-```bash
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes (clears all data)
-docker-compose down -v
-
-# Restart services
-docker-compose restart
-
-# View resource usage
-docker-compose top
-```
-
-### **Backup & Restore**
-```bash
-# Backup database
-docker exec claude-company-db pg_dump -U claude_user claude_company > backup.sql
-
-# Restore database
-docker exec -i claude-company-db psql -U claude_user claude_company < backup.sql
-```
 
 ## 🎭 Real-World Example
 
-Let's say you want to add a user authentication system:
-
 ```bash
-./bin/ccs --task "Add JWT-based user authentication with registration, login, and protected routes"
+./bin/ccs --task "Add user authentication system"
 ```
 
-**What happens automatically:**
-
-1. **Manager Analysis** (Parent Pane):
-   - "I need to break this into: user models, JWT service, auth middleware, registration endpoint, login endpoint, and tests"
-
-2. **Worker Creation & Assignment**:
-   - Creates 3 child panes
-   - Assigns backend work to Worker #1
-   - Assigns testing to Worker #2  
-   - Assigns integration to Worker #3
-
-3. **Parallel Implementation**:
-   - Worker #1: Creates user models, JWT functions, endpoints
-   - Worker #2: Writes unit tests and integration tests
-   - Worker #3: Sets up middleware and route protection
-
-4. **Quality Control**:
-   - Manager reviews each component
-   - Requests modifications if needed
-   - Coordinates final integration testing
-
-5. **Completion**:
-   - All code is working and tested
-   - Build passes successfully
-   - Features are ready to use
+The manager pane will analyze the task and coordinate with worker panes to implement the authentication system in a structured way.
 
 ## 🚨 Troubleshooting
 
