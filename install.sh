@@ -1,25 +1,27 @@
 #!/bin/bash
 
-# Claude Company Tools Installation Script
-# Installs storm and deploy binaries to user's PATH
+# Claude Company Installation Script
+# Builds and installs the ccs binary
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$HOME/bin"
 
-echo "Installing Claude Company Tools..."
+echo "Building and installing Claude Company..."
+
+# Build the binary
+cd "$SCRIPT_DIR"
+go build -o bin/ccs
 
 # Create bin directory if it doesn't exist
 mkdir -p "$INSTALL_DIR"
 
-# Copy binaries
-cp "$SCRIPT_DIR/bin/storm" "$INSTALL_DIR/"
-cp "$SCRIPT_DIR/bin/deploy" "$INSTALL_DIR/"
+# Copy binary
+cp "$SCRIPT_DIR/bin/ccs" "$INSTALL_DIR/"
 
-# Make them executable
-chmod +x "$INSTALL_DIR/storm"
-chmod +x "$INSTALL_DIR/deploy"
+# Make it executable
+chmod +x "$INSTALL_DIR/ccs"
 
 # Add to PATH in shell configs
 add_to_path() {
@@ -39,8 +41,6 @@ add_to_path "$HOME/.zshrc"
 add_to_path "$HOME/.profile"
 
 echo "Installation complete!"
-echo "Commands available:"
-echo "  storm - tmux session manager"
-echo "  deploy - AI task manager"
+echo "Command available: ccs"
 echo ""
 echo "Please restart your terminal or run: source ~/.bashrc (or ~/.zshrc)"

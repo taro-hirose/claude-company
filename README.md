@@ -1,27 +1,20 @@
 # Claude Company 🤖
 
-**AI-powered project management system with intelligent task delegation**
+**AI-powered tmux session management with intelligent task delegation**
 
-Claude Company transforms your development workflow by creating an AI-powered team where one Claude AI acts as a project manager, orchestrating multiple worker Claude AIs to collaboratively complete complex tasks.
+Claude Company provides a streamlined way to manage tmux sessions and delegate tasks to Claude AI within structured panes for collaborative development work.
 
 ## ✨ Key Features
-
-### 🎯 **AI Project Manager System**
-- **Smart Task Delegation**: Parent pane analyzes tasks and breaks them into manageable subtasks
-- **Intelligent Worker Management**: Automatically creates and manages child panes for parallel work
-- **Quality Control**: Built-in review system and integration testing
-- **Real-time Progress Monitoring**: Track completion status across all workers
 
 ### ⚡ **STORM Session Manager**
 - **Lightning-fast tmux session management**
 - **Cross-shell compatibility** (bash, zsh, fish)
 - **Clean command interface** for session lifecycle management
 
-### 🔄 **Automated Workflow**
+### 🔄 **AI Task Management**
 - **Role Separation**: Manager for oversight, workers for implementation
-- **Automatic Pane Creation**: Dynamic scaling based on task complexity
-- **Quality Assurance**: Mandatory code review and build testing
-- **Seamless Integration**: Built-in tmux and Claude AI integration
+- **Structured Pane Creation**: Creates organized workspace with manager and worker panes
+- **Task Assignment**: Simple interface for assigning tasks to AI workers
 
 ## 🚀 Quick Start
 
@@ -45,16 +38,9 @@ go build -o bin/ccs
 
 ### 3. Assign Tasks to AI Team
 ```bash
-# AI Manager Mode (now the only mode)
-./bin/ccs --task "Implement user authentication system with JWT tokens"
+# Simple task assignment
+./bin/ccs --task "Implement user authentication system"
 ```
-
-### 4. Watch the Magic Happen
-1. **Manager pane** analyzes the task and creates a project plan
-2. **Worker panes** are automatically created and assigned specific subtasks
-3. **Implementation** happens in parallel across multiple Claude AIs
-4. **Quality control** - Manager reviews all work and coordinates testing
-5. **Integration** - Final build and validation
 
 ## 🏗️ Architecture Overview
 
@@ -217,39 +203,14 @@ echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
+
 ## 🎭 Real-World Example
 
-Let's say you want to add a user authentication system:
-
 ```bash
-./bin/ccs --task "Add JWT-based user authentication with registration, login, and protected routes"
+./bin/ccs --task "Add user authentication system"
 ```
 
-**What happens automatically:**
-
-1. **Manager Analysis** (Parent Pane):
-   - "I need to break this into: user models, JWT service, auth middleware, registration endpoint, login endpoint, and tests"
-
-2. **Worker Creation & Assignment**:
-   - Creates 3 child panes
-   - Assigns backend work to Worker #1
-   - Assigns testing to Worker #2  
-   - Assigns integration to Worker #3
-
-3. **Parallel Implementation**:
-   - Worker #1: Creates user models, JWT functions, endpoints
-   - Worker #2: Writes unit tests and integration tests
-   - Worker #3: Sets up middleware and route protection
-
-4. **Quality Control**:
-   - Manager reviews each component
-   - Requests modifications if needed
-   - Coordinates final integration testing
-
-5. **Completion**:
-   - All code is working and tested
-   - Build passes successfully
-   - Features are ready to use
+The manager pane will analyze the task and coordinate with worker panes to implement the authentication system in a structured way.
 
 ## 🚨 Troubleshooting
 

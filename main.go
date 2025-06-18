@@ -26,13 +26,10 @@ func main() {
 		return
 	}
 
-	if taskDesc == "" {
-		log.Fatal("Task description is required (-task)")
-	}
-
-	deploy := commands.NewDeployCommand(taskDesc, manager)
-
-	if err := deploy.Execute(); err != nil {
-		log.Fatal(err)
+	if taskDesc != "" {
+		deploy := commands.NewDeployCommand(taskDesc, manager)
+		if err := deploy.Execute(); err != nil {
+			log.Fatal(err)
+		}
 	}
 }

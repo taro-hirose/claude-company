@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"fmt"
-	"claude-company/internal/models"
 	"claude-company/internal/session"
-	"claude-company/internal/utils"
+	"fmt"
 )
 
 type DeployCommand struct {
@@ -20,43 +18,35 @@ func NewDeployCommand(taskDesc string, manager *session.Manager) *DeployCommand 
 }
 
 func (c *DeployCommand) Execute() error {
-	task := models.Task{
-		ID:          utils.GenerateTaskID(),
-		Description: c.taskDesc,
-		Mode:        "ai",
-		Status:      "assigned",
-	}
-
-	return c.executeAIMode(task)
-}
-
-func (c *DeployCommand) executeAIMode(task models.Task) error {
 	panes, err := c.manager.GetPanes()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get panes: %w", err)
 	}
 
 	if len(panes) < 2 {
 		return fmt.Errorf("need at least 2 panes for AI mode (manager + workers)")
 	}
 
-	managerPane := panes[0]
-	claudePane := panes[1]
-	
-	task.PaneID = managerPane
-
-	// 新しいAIマネージャーを作成
-	aiManager := NewAIManager(c.manager, task, managerPane)
-	
-	// マネージャープロンプトを送信
-	if err := aiManager.SendManagerPrompt(claudePane); err != nil {
-		return err
-	}
-
-	fmt.Printf("🎯 AI管理モード開始: 親ペイン %s がプロジェクトマネージャーとして機能します\n", managerPane)
-	fmt.Printf("📋 役割分担: 親ペイン=マネジメント・レビュー専用, 子ペイン=実装作業専用\n")
-	fmt.Printf("🔄 子ペインが実装完了報告後、親ペインがレビュー・品質管理を実施します\n")
-	
-	return nil
+	return c.executeAIMode(panes)
 }
 
+func (c *DeployCommand) executeAIMode(panes []string) error {
+	workerPane := panes[1]
+
+	// Set the main task in manager
+	c.manager.SetMainTask(c.taskDesc)
+
+	// Send task to manager pane using BuildManagerPrompt
+	taskPrompt := c.manager.BuildManagerPrompt(workerPane)
+
+	if err := c.manager.SendToPane(workerPane, taskPrompt); err != nil {
+		return fmt.Errorf("failed to send task to manager pane: %w", err)
+	}
+
+	fmt.Printf("🎯 AI管理モード開始: 親ペイン %s がプロジェクトマネージャーとして機能します\n", workerPane)
+	fmt.Printf("📋 役割分担: 親ペイン=マネジメント・レビュー専用, 子ペイン=実装作業専用\n")
+	fmt.Printf("🔄 タスク: %s\n", c.taskDesc)
+	fmt.Printf("⚡ ワーカーペイン %s で実装作業を行ってください\n", workerPane)
+
+	return nil
+}
