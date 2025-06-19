@@ -9,11 +9,11 @@ import (
 )
 
 type Manager struct {
-	SessionName   string
-	ClaudeCmd     string
-	ParentPanes   map[string]bool  // 親ペイン追跡マップ
-	InitialPanes  []string         // 初期ペイン状態
-	mainTask      string           // メインタスク
+	SessionName  string
+	ClaudeCmd    string
+	ParentPanes  map[string]bool // 親ペイン追跡マップ
+	InitialPanes []string        // 初期ペイン状態
+	mainTask     string          // メインタスク
 }
 
 func NewManager(sessionName, claudeCmd string) *Manager {
@@ -52,108 +52,59 @@ func (m *Manager) parseOutputLines(output []byte) []string {
 func (m *Manager) BuildManagerPrompt(claudePane string) string {
 	_, _ = m.GetPanes()
 
-	return fmt.Sprintf(`あなたは%s（プロジェクトマネージャー）です。
+	return fmt.Sprintf(`
+ultrathink
 
-🔐 **絶対的な役割制限** 🔐
-以下の作業は一切禁止されています：
-- コードの記述・編集
-- ファイルの直接操作
-- ビルド・テストの実行
-- デプロイ作業
-- 技術実装
+プロジェクトマネージャー(%s)として機能してください。
 
-✅ **許可されている役割** ✅
-- タスクの分析・分解
-- サブタスクの割り当て
-- 進捗管理・監視
-- 品質管理・レビュー指示
-- 統合管理・完了判定
+## 制限事項
+禁止: コード編集、ファイル操作、ビルド、テスト、デプロイ、技術実装
+許可: コード解析、タスク分析・分解、割り当て、進捗管理、品質管理、統合判定
 
-==== メインタスク ====
+## メインタスク
 %s
 
-==== あなたの役割（マネージャー専用） ====
-1. メインタスクを分析し、効率的なサブタスクに分解する
-2. 必要に応じて子ペインを動的に作成する(並行作業できるものであれば複数立ち上げも可)  
-3. 各子ペインに具体的なサブタスクを割り当てる
-4. 子ペインの進捗を監視し、作業完了を確認する
-5. 子ペインから提出された成果物をレビューする
-6. 品質チェック・統合テストを指示する
-7. 最終的な統合・完了判定を行う
+## 管理フロー
+1. コードの理解
+2. タスク分析→サブタスク分解
+3. 子ペイン作成(並行可能なら複数)
+4. サブタスク割り当て
+5. 子ペインに依頼したサブタスクの進捗監視・成果物レビュー
+6. 統合テスト指示・完了判定
 
-==== 子ペイン作成方法 ====
-必要に応じてtmux split-windowコマンドで新しい子ペインを作成できます：
-例：
-- 横分割: tmux split-window -h -t claude-squad
-- 縦分割: tmux split-window -v -t claude-squad
-- 特定ペインを分割: tmux split-window -h -t %s
+## ペイン操作
+**作成**: tmux split-window -v -t claude-squad
+**起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter Enter 
 
-==== 新規ペイン作成後の手順 ====
-新しいペインを作成したら、必ずClaude AIを起動してください：
-1. ペイン作成後：tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
-2. Claude起動確認後にサブタスクを送信
-3. サブタスクを送信後、新規ペインでエンターを1秒後に送信してタスクを実行
+## サブタスク送信
+**重要**: 子ペインのみに送信、親ペイン(%s)は管理専用
 
-==== サブタスクの作成方法 ====
-必須条件：
-1. サブタスクは必ず、子ペインを作り、子ペインで起動しているclaudeにやらせること
-2. 親ペイン（%s）には絶対にサブタスクを送信しないこと（親ペインはマネージメント専用）
-
-サブタスク送信テンプレート：
+テンプレート:
 `+"`"+`
 サブタスク: [タスク名]
-目的: [このタスクで達成したいこと]
-期待する成果物: [具体的な成果物の説明]
-制約条件: [注意点や制約があれば]
-完了条件: [完了と判断する基準]
-完了報告手順: 
-1. tmux send-keys -t %s で報告すること
-2. 必ず送信先のペインでエンターを1秒後に送信してタスクを実行
+目的: [達成目標]
+成果物: [具体的な成果物]
+完了条件: [完了基準]
+報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter Enter
 `+"`"+`
 
-- サブタスクの作成方法：tmux send-keys -t 子ペインID '[ここにタスクの内容]' Enter
-- サブタスクを送信後、必ず送信先のペインでエンターを1秒後に送信してタスクを実行
+## 進捗管理
+- 定期進捗確認
+- 完了報告時のレビュー指示
+- 問題発生時の修正指示
+- 全体統合テスト指示
 
-==== タスク送信方法 ====
-各子ペイン（%sまたは新規作成）にサブタスクを送信する場合は、以下のコマンド形式を使用してください：
-tmux send-keys -t 子ペインID 'サブタスク: [具体的なサブタスク内容と期待する成果物]' Enter
+## 報告フォーマット
+- 実装完了: [ファイルパス] - [説明]
+- 進捗報告: [状況] - [作業内容]
+- エラー報告: [内容] - [支援要請]
 
-例：
-tmux send-keys -t %s 'サブタスク: internal/models/user.goファイルを作成し、User構造体を定義してください。完了後は「実装完了：ファイルパス」で報告してください' Enter
-
-==== 進捗管理・レビュー方法 ====
-1. 定期的に子ペインに進捗確認メッセージを送信
-2. 子ペインから「実装完了」報告があったらレビュー指示を送信  
-3. 問題があれば修正指示を送信
-4. 全サブタスク完了後、統合テストを指示
-
-==== 品質管理ガイドライン ====
-- 各サブタスク完了後、必ず成果物のレビューを実施
-- ビルドエラーがないか確認指示
-- コード品質・設計一貫性の確認
-- テスト実行の指示
-- 必要に応じて修正・改善指示
-
-==== 実行手順 ====
-1. メインタスクを分析してサブタスクに分解
-2. 必要に応じて子ペインを作成  
-3. 各子ペインに具体的なサブタスクを送信
-4. 定期的に進捗を確認し、レビュー・品質管理を実施
-5. 全体の統合・完了判定を行う
-
-==== 作業状況報告フォーマット ====
-子ペインからの報告は以下の形式で受け取ります：
-- 「実装完了：[ファイルパス] - [簡単な説明]」
-- 「進捗報告：[進捗状況] - [現在の作業内容]」
-- 「エラー報告：[エラー内容] - [支援要請]」
-
-それでは、メインタスクの分析と子ペインへの作業委託を開始してください。`,
+メインタスクの分析とサブタスク委託を開始してください。`,
 		claudePane,
 		m.mainTask,
 		claudePane,
 		claudePane,
-		claudePane,
-		claudePane, claudePane)
+		claudePane)
 }
 
 func (m *Manager) Setup() error {
@@ -169,13 +120,13 @@ func (m *Manager) Setup() error {
 	cmd := exec.Command("tmux", "has-session", "-t", m.SessionName)
 	if cmd.Run() == nil {
 		fmt.Printf("🔄 Session '%s' already exists.\n", m.SessionName)
-		
+
 		fmt.Println("📊 Current pane status:")
 		statusCmd := exec.Command("tmux", "list-panes", "-s", "-t", m.SessionName, "-F", "#{pane_index}: #{pane_id} #{pane_current_command}")
 		if output, err := statusCmd.Output(); err == nil {
 			fmt.Print(string(output))
 		}
-		
+
 		return m.attach()
 	}
 
@@ -262,7 +213,7 @@ func (m *Manager) setupMainPane() error {
 	mainPaneID := lines[0]
 
 	fmt.Println("📝 Setting up main pane with management commands...")
-	
+
 	selectCmd := exec.Command("tmux", "select-pane", "-t", mainPaneID)
 	if err := selectCmd.Run(); err != nil {
 		return err
@@ -292,7 +243,7 @@ func (m *Manager) SendToPane(paneID, command string) error {
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("tmux command failed: %v, output: %s", err, string(output))
 	}
-	
+
 	fmt.Printf("Task assigned to pane %s\n", paneID)
 	return nil
 }
@@ -311,7 +262,7 @@ func (m *Manager) SendToNewPaneOnly(command string) error {
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("tmux command failed: %v, output: %s", err, string(output))
 	}
-	
+
 	fmt.Printf("📤 Task assigned to new pane %s only\n", newPaneID)
 	return nil
 }
@@ -342,7 +293,7 @@ func (m *Manager) CreateNewPaneAndGetID() (string, error) {
 		return "", fmt.Errorf("failed to get panes before creation: %v", err)
 	}
 
-	cmd := exec.Command("tmux", "split-window", "-v", "-t", m.SessionName + ":0.0")
+	cmd := exec.Command("tmux", "split-window", "-v", "-t", m.SessionName+":0.0")
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to create new pane: %v", err)
 	}
@@ -407,15 +358,15 @@ func (m *Manager) recordInitialPanes() error {
 		// セッションが存在しない場合は問題なし
 		return nil
 	}
-	
+
 	m.InitialPanes = make([]string, len(panes))
 	copy(m.InitialPanes, panes)
-	
+
 	// 初期ペインを親ペインとして記録
 	for _, pane := range panes {
 		m.ParentPanes[pane] = true
 	}
-	
+
 	fmt.Printf("🔍 Recorded %d initial parent panes\n", len(panes))
 	return nil
 }
@@ -436,14 +387,14 @@ func (m *Manager) GetChildPanes() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var childPanes []string
 	for _, pane := range allPanes {
 		if m.IsChildPane(pane) {
 			childPanes = append(childPanes, pane)
 		}
 	}
-	
+
 	return childPanes, nil
 }
 
@@ -453,12 +404,12 @@ func (m *Manager) SendToChildPaneOnly(command string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get child panes: %v", err)
 	}
-	
+
 	if len(childPanes) == 0 {
 		// 子ペインが存在しない場合は新しく作成
 		return m.SendToNewPaneOnly(command)
 	}
-	
+
 	// 最初の子ペインに送信
 	targetPane := childPanes[0]
 	return m.SendToPane(targetPane, command)
@@ -471,7 +422,7 @@ func (m *Manager) SendToFilteredPane(paneID, command string) error {
 		fmt.Println("🔄 Redirecting to child pane...")
 		return m.SendToChildPaneOnly(command)
 	}
-	
+
 	fmt.Printf("✅ Task assigned to child pane %s\n", paneID)
 	return m.SendToPane(paneID, command)
 }
@@ -482,7 +433,7 @@ func (m *Manager) CreateNewPaneAndRegisterAsChild() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// 新しいペインは自動的に子ペインとして扱われる（parentPanesに含まれない）
 	fmt.Printf("📝 Registered new child pane: %s\n", newPaneID)
 	return newPaneID, nil

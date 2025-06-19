@@ -23,23 +23,23 @@ Claude Company provides a streamlined way to manage tmux sessions and delegate t
 # Clone and build
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
-go build -o bin/ccs
+go build -o claude-company .
 
-# Or use the install script
-./install.sh
+# Or use the build system
+make build
 ```
 
 ### 2. Setup Claude Company Session
 ```bash
 # Create tmux session with AI-powered workspace
-./bin/ccs
+./claude-company
 # This creates a structured environment with manager and worker panes
 ```
 
 ### 3. Assign Tasks to AI Team
 ```bash
 # Simple task assignment
-./bin/ccs --task "Implement user authentication system"
+./claude-company --task "Implement user authentication system"
 ```
 
 ## 🏗️ Architecture Overview
@@ -49,21 +49,17 @@ go build -o bin/ccs
 ```
 ┌─────────────────┬─────────────────┐
 │ 🎯 Manager Pane │ 🔧 Worker Pane  │
-│ (Claude AI #1)  │ (Claude AI #2)  │
+│ (Claude AI #1)  │ (Claude AI #2+) │
 │                 │                 │
 │ • Task Analysis │ • Code Writing  │
 │ • Planning      │ • File Creation │
 │ • Review        │ • Implementation│
 │ • Quality Check │ • Bug Fixes     │
-├─────────────────┼─────────────────┤
-│ 🔍 Review Pane  │ 🧪 Test Pane    │
-│ (Claude AI #3)  │ (Claude AI #4)  │
-│                 │                 │
-│ • Code Review   │ • Unit Testing  │
-│ • Standards     │ • Integration   │
-│ • Optimization  │ • Validation    │
-│ • Documentation │ • Build Checks  │
+│ • Coordination  │ • Task Execution│
+│ • Final Check   │ • Progress Report│
 └─────────────────┴─────────────────┘
+
+**Note**: Manager creates additional worker panes dynamically as needed
 ```
 
 ### **Workflow Process**
@@ -82,26 +78,26 @@ go build -o bin/ccs
 
 ```bash
 # Full-stack application development
-./bin/ccs --task "Create a REST API with authentication, user management, and a React frontend"
+./claude-company --task "Create a REST API with authentication, user management, and a React frontend"
 
 # Code refactoring and optimization  
-./bin/ccs --task "Refactor the existing codebase for better maintainability and add comprehensive tests"
+./claude-company --task "Refactor the existing codebase for better maintainability and add comprehensive tests"
 
 # Bug fixing and enhancement
-./bin/ccs --task "Fix all build errors and add logging functionality throughout the application"
+./claude-company --task "Fix all build errors and add logging functionality throughout the application"
 ```
 
 ### **Project Management Tasks**
 
 ```bash
 # Architecture design
-./bin/ccs --task "Design a microservices architecture for the e-commerce platform and implement the user service"
+./claude-company --task "Design a microservices architecture for the e-commerce platform and implement the user service"
 
 # Documentation creation
-./bin/ccs --task "Create comprehensive API documentation and add inline code comments"
+./claude-company --task "Create comprehensive API documentation and add inline code comments"
 
 # Performance optimization
-./bin/ccs --task "Profile the application, identify bottlenecks, and implement performance improvements"
+./claude-company --task "Profile the application, identify bottlenecks, and implement performance improvements"
 ```
 
 ## 🛠️ Command Reference
@@ -109,11 +105,11 @@ go build -o bin/ccs
 ### **Main Commands**
 ```bash
 # Setup tmux session (default behavior)
-./bin/ccs
-./bin/ccs --setup
+./claude-company
+./claude-company --setup
 
 # Assign task to AI team
-./bin/ccs --task "TASK_DESCRIPTION"
+./claude-company --task "TASK_DESCRIPTION"
 ```
 
 ### **STORM Session Management**
@@ -193,12 +189,18 @@ sudo apt install tmux golang-go
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
 go mod tidy
-go build -o bin/ccs
+make build
 ```
 
 3. **Setup PATH (optional)**
 ```bash
-cp bin/ccs ~/bin/ccs
+# Option 1: Copy main binary
+cp claude-company ~/bin/claude-company
+
+# Option 2: Install via make (recommended)
+make install
+
+# Update PATH if needed
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
@@ -207,7 +209,7 @@ source ~/.bashrc
 ## 🎭 Real-World Example
 
 ```bash
-./bin/ccs --task "Add user authentication system"
+./claude-company --task "Add user authentication system"
 ```
 
 The manager pane will analyze the task and coordinate with worker panes to implement the authentication system in a structured way.
@@ -235,7 +237,7 @@ sudo apt install tmux  # Ubuntu
 tmux list-panes -s -t claude-squad -F '#{pane_id}: #{pane_current_command}'
 
 # Restart session if needed
-./bin/ccs --setup
+./claude-company --setup
 ```
 
 **❌ Tasks not being distributed**
@@ -253,8 +255,8 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
 go mod tidy
-go build -o bin/ccs
-./bin/ccs --task "Help improve this project"  # Meta! 😄
+make build
+./claude-company --task "Help improve this project"  # Meta! 😄
 ```
 
 ## 📄 License
