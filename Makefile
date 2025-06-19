@@ -1,17 +1,11 @@
 .PHONY: build build-storm build-deploy clean install test
 
 # Build all binaries
-build: build-storm build-deploy
-
-# Build storm binary (tmux session manager)
-build-storm:
-	@echo "⚡ Building storm binary..."
-	@mkdir -p bin
-	go build -o bin/storm ./cmd/ccs
+build: build-deploy
 
 # Build deploy binary (AI task manager)
 build-deploy:
-	@echo "🚀 Building deploy binary..."
+	@echo "🚀 Building claude-company binary..."
 	@mkdir -p bin
 	go build -o bin/deploy .
 
@@ -23,19 +17,14 @@ build-cross:
 	GOOS=darwin GOARCH=amd64 go build -o bin/storm-darwin-amd64 ./cmd/ccs
 	GOOS=darwin GOARCH=arm64 go build -o bin/storm-darwin-arm64 ./cmd/ccs
 	GOOS=windows GOARCH=amd64 go build -o bin/storm-windows-amd64.exe ./cmd/ccs
-	GOOS=linux GOARCH=amd64 go build -o bin/deploy-linux-amd64 .
-	GOOS=darwin GOARCH=amd64 go build -o bin/deploy-darwin-amd64 .
-	GOOS=darwin GOARCH=arm64 go build -o bin/deploy-darwin-arm64 .
-	GOOS=windows GOARCH=amd64 go build -o bin/deploy-windows-amd64.exe .
+	GOOS=linux GOARCH=amd64 go build -o bin/claude-company-linux-amd64 .
+	GOOS=darwin GOARCH=amd64 go build -o bin/claude-company-darwin-amd64 .
+	GOOS=darwin GOARCH=arm64 go build -o bin/claude-company-darwin-arm64 .
+	GOOS=windows GOARCH=amd64 go build -o bin/claude-company-windows-amd64.exe .
 
 # Clean build artifacts
 clean:
 	rm -rf bin/
-
-# Install to local bin (requires sudo)
-install: build
-	sudo cp bin/storm /usr/local/bin/
-	sudo cp bin/deploy /usr/local/bin/
 
 # Test
 test:
