@@ -8,7 +8,7 @@ build-deploy:
 	@echo "🚀 Building claude-company binary..."
 	@mkdir -p bin
 	go build -o bin/deploy .
-
+	go build -o ./claude-company .
 # Build for multiple platforms
 build-cross:
 	@echo "🌍 Building for multiple platforms..."

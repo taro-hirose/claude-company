@@ -1,0 +1,32 @@
+# Claude Company Orchestrator Configuration
+# オーケストレータの設定ファイル
+
+manager:
+  role: "project_manager"
+  prompt: "あなたはプロジェクトマネージャーです。タスクを分析し、ワーカーに適切に割り当ててください。コードは直接書かず、レビューと調整のみを行ってください。"
+  max_retries: 3
+  review_depth: 2
+
+workers:
+  max_workers: 4
+  roles:
+    - "developer"
+    - "tester"
+    - "reviewer"
+    - "documentation"
+  task_timeout: 1800  # 30分（秒）
+  coordination_mode: "hierarchical"  # hierarchical | collaborative
+
+session:
+  name: "claude-squad"
+  layout: "tiled"  # tiled | even-horizontal | even-vertical | main-horizontal | main-vertical
+  window_prefix: "work"
+  pane_prefix: "claude"
+  auto_start_tmux: true
+
+defaults:
+  working_dir: "."
+  shell: "/bin/bash"
+  claude_flags:
+    - "--dangerously-skip-permissions"
+  language: "ja"  # ja | en

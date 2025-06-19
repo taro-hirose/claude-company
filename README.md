@@ -1,190 +1,335 @@
 # Claude Company 🤖
 
-**AI-powered tmux session management with intelligent task delegation**
+**AI 駆動の tmux セッション管理とインテリジェントなタスク委譲**
 
-Claude Company provides a streamlined way to manage tmux sessions and delegate tasks to Claude AI within structured panes for collaborative development work.
+Claude Company は、構造化されたペイン内で tmux セッションを管理し、Claude AI にタスクを委譲する協働開発作業のための合理化されたソリューションを提供します。
 
-## ✨ Key Features
+## ✨ 主要機能
 
-### ⚡ **STORM Session Manager**
-- **Lightning-fast tmux session management**
-- **Cross-shell compatibility** (bash, zsh, fish)
-- **Clean command interface** for session lifecycle management
+### 🔄 **AI タスク管理**
 
-### 🔄 **AI Task Management**
-- **Role Separation**: Manager for oversight, workers for implementation
-- **Structured Pane Creation**: Creates organized workspace with manager and worker panes
-- **Task Assignment**: Simple interface for assigning tasks to AI workers
+- **役割分離**: 管理者は監督、作業者は実装を担当
+- **構造化ペイン作成**: 管理者ペインと作業者ペインで整理されたワークスペースを構築
+- **タスク割り当て**: AI 作業者へのタスク割り当て用シンプルインターフェース
 
-## 🚀 Quick Start
+### 🎯 **オーケストレーターモード（上級機能）**
 
-### 1. Installation
+- **インテリジェントステップ管理**: 自動タスク分解と依存関係解決
+- **コンテキスト認識実行**: 100-200 語制限でのスマート要約
+- **設定管理**: YAML ベースのワークフローカスタマイズ
+- **多言語サポート**: 日本語と英語のコンテキスト処理
+
+## 🚀 クイックスタート
+
+### 1. インストール
+
 ```bash
-# Clone and build
+# クローンとビルド
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
 go build -o claude-company .
 
-# Or use the build system
+# またはビルドシステムを使用
 make build
 ```
 
-### 2. Setup Claude Company Session
+### 2. Claude Company セッションのセットアップ
+
 ```bash
-# Create tmux session with AI-powered workspace
+# AI駆動ワークスペースでtmuxセッションを作成
 ./claude-company
-# This creates a structured environment with manager and worker panes
+# 管理者ペインと作業者ペインを含む構造化環境を作成します
 ```
 
-### 3. Assign Tasks to AI Team
+### 3. AI チームへのタスク割り当て
+
 ```bash
-# Simple task assignment
-./claude-company --task "Implement user authentication system"
+# シンプルなタスク割り当て
+./claude-company --task "ユーザー認証システムの実装"
 ```
 
-## 🏗️ Architecture Overview
+## 🏗️ アーキテクチャ概要
 
-### **Role-Based AI Team Structure**
+### **役割ベース AI チーム構造**
 
 ```
 ┌─────────────────┬─────────────────┐
-│ 🎯 Manager Pane │ 🔧 Worker Pane  │
+│ 🎯 管理者ペイン   │ 🔧 作業者ペイン   │
 │ (Claude AI #1)  │ (Claude AI #2+) │
 │                 │                 │
-│ • Task Analysis │ • Code Writing  │
-│ • Planning      │ • File Creation │
-│ • Review        │ • Implementation│
-│ • Quality Check │ • Bug Fixes     │
-│ • Coordination  │ • Task Execution│
-│ • Final Check   │ • Progress Report│
+│ • タスク分析     │ • コード記述      │
+│ • 計画立案       │ • ファイル作成    │
+│ • レビュー       │ • 実装作業        │
+│ • 品質チェック   │ • バグ修正        │
+│ • 調整作業       │ • タスク実行      │
+│ • 最終確認       │ • 進捗報告        │
 └─────────────────┴─────────────────┘
 
-**Note**: Manager creates additional worker panes dynamically as needed
+**注意**: 管理者は必要に応じて追加の作業者ペインを動的に作成します
 ```
 
-### **Workflow Process**
+### **ワークフロープロセス**
 
-1. **📋 Task Input**: You provide a high-level task description
-2. **🧠 Analysis**: Manager AI breaks down the task into subtasks  
-3. **🏭 Scaling**: Manager creates additional worker panes as needed
-4. **⚡ Parallel Execution**: Multiple Claude AIs work simultaneously
-5. **🔍 Quality Control**: Manager reviews all implementation work
-6. **🧪 Testing**: Automated build verification and testing
-7. **✅ Integration**: Final validation and completion
+1. **📋 タスク入力**: 高レベルなタスク説明を提供
+2. **🧠 分析**: 管理者 AI がタスクをサブタスクに分解
+3. **🏭 スケーリング**: 管理者が必要に応じて追加の作業者ペインを作成
+4. **⚡ 並列実行**: 複数の Claude AI が同時に作業
+5. **🔍 品質管理**: 管理者がすべての実装作業をレビュー
+6. **🧪 テスト**: 自動ビルド検証とテスト
+7. **✅ 統合**: 最終検証と完了
 
-## 📚 Usage Examples
+## 📚 使用例
 
-### **Software Development Tasks**
+### **ソフトウェア開発タスク**
 
 ```bash
-# Full-stack application development
-./claude-company --task "Create a REST API with authentication, user management, and a React frontend"
+# フルスタックアプリケーション開発
+./claude-company --task "認証、ユーザー管理、Reactフロントエンドを含むREST APIを作成"
 
-# Code refactoring and optimization  
-./claude-company --task "Refactor the existing codebase for better maintainability and add comprehensive tests"
+# コードリファクタリングと最適化
+./claude-company --task "保守性向上のため既存コードベースをリファクタリングし、包括的テストを追加"
 
-# Bug fixing and enhancement
-./claude-company --task "Fix all build errors and add logging functionality throughout the application"
+# バグ修正と機能強化
+./claude-company --task "すべてのビルドエラーを修正し、アプリケーション全体にログ機能を追加"
 ```
 
-### **Project Management Tasks**
+### **プロジェクト管理タスク**
 
 ```bash
-# Architecture design
-./claude-company --task "Design a microservices architecture for the e-commerce platform and implement the user service"
+# アーキテクチャ設計
+./claude-company --task "eコマースプラットフォーム用マイクロサービスアーキテクチャを設計し、ユーザーサービスを実装"
 
-# Documentation creation
-./claude-company --task "Create comprehensive API documentation and add inline code comments"
+# ドキュメント作成
+./claude-company --task "包括的なAPI仕様書を作成し、インラインコードコメントを追加"
 
-# Performance optimization
-./claude-company --task "Profile the application, identify bottlenecks, and implement performance improvements"
+# パフォーマンス最適化
+./claude-company --task "アプリケーションをプロファイリングし、ボトルネックを特定してパフォーマンス改善を実装"
 ```
 
-## 🛠️ Command Reference
+## 🛠️ コマンドリファレンス
 
-### **Main Commands**
+### **メインコマンド**
+
 ```bash
-# Setup tmux session (default behavior)
+# tmuxセッションのセットアップ（デフォルト動作）
 ./claude-company
 ./claude-company --setup
 
-# Assign task to AI team
-./claude-company --task "TASK_DESCRIPTION"
+# 従来モード - AIチームへのタスク割り当て
+./claude-company --task "タスク説明"
+
+# 🎯 オーケストレーターモード - 高度なワークフロー制御
+./claude-company --orchestrate --task "タスク説明"
+
+# カスタム設定でのオーケストレーター
+./claude-company --orchestrate --config .claude/orchestrator.yaml --task "タスク説明"
+
+# 詳細進捗表示でのステップ実行
+./claude-company --orchestrate --steps --task "タスク説明"
+
+# ドライラン - 実行せずにステップ計画のみ
+./claude-company --orchestrate --dry-run --task "タスク説明"
 ```
 
-### **STORM Session Management**
+## 🎯 オーケストレーターモード
+
+**インテリジェントなステップ管理による高度な AI 駆動ワークフロー制御**
+
+Claude Company のオーケストレーターモードは、インテリジェントなステップ実行、自動コンテキスト管理、高度なタスク要約を通じて洗練されたタスク実行を提供します。
+
+### **🚀 オーケストレーターのクイックスタート**
+
 ```bash
-# List all sessions
-./bin/storm list     # or 'ls'
+# 複雑なタスクでオーケストレーターモードを有効化
+./claude-company --orchestrate --task "認証機能付き完全なeコマースバックエンドを構築"
 
-# Create new session  
-./bin/storm new <session-name>
+# 設定ファイルを使用
+./claude-company --orchestrate --config .claude/orchestrator.yaml --task "レガシーコードベースをリファクタリング"
 
-# Attach to session
-./bin/storm attach <session-name>  # or 'a'
-
-# Kill session
-./bin/storm kill <session-name>    # or 'k'
-
-# Switch between sessions
-./bin/storm switch <session-name>  # or 's'
-
-# Rename session
-./bin/storm rename <old-name> <new-name>  # or 'r'
+# 進捗追跡付きステップ実行
+./claude-company --orchestrate --steps --task "マイクロサービスアーキテクチャを実装"
 ```
 
-## 🎯 How It Works
+### **✨ 主要機能**
 
-### **Manager AI Responsibilities**
-- ❌ **Never writes code directly**  
-- ✅ **Analyzes and breaks down tasks**
-- ✅ **Creates and manages worker panes**
-- ✅ **Assigns specific subtasks to workers**
-- ✅ **Reviews completed work for quality**
-- ✅ **Coordinates testing and integration**
-- ✅ **Provides final approval and completion**
+#### **🔄 インテリジェントステップ管理**
 
-### **Worker AI Responsibilities**  
-- ✅ **Implements assigned subtasks**
-- ✅ **Writes actual code and creates files**
-- ✅ **Reports completion with deliverables**
-- ✅ **Responds to feedback and revision requests**
-- ✅ **Fixes issues identified during review**
+- **自動タスク分解**: 複雑なタスクを管理可能なステップに自動分割
+- **依存関係解決**: 依存関係に基づく最適な順序でのステップ実行
+- **進捗追跡**: ステップ完了状況のリアルタイム監視
+- **適応的計画**: 中間結果に基づく実行計画の動的調整
 
-### **Communication Protocol**
+#### **📊 コンテキスト認識実行**
+
+- **スマート要約**: 100-200 語のタスク要約の自動生成
+- **コンテキスト共有**: 実行ステップ間でのシームレスな情報フロー
+- **メモリ管理**: ステップ間での関連コンテキストのインテリジェントな保持
+- **多言語サポート**: 日本語と英語のコンテキスト処理
+
+#### **⚙️ 設定管理**
+
+- **YAML 設定**: `.claude/orchestrator.yaml`による柔軟な設定
+- **テンプレートシステム**: 複数の要約テンプレート（詳細、簡潔、技術、管理）
+- **カスタマイズ可能ワークフロー**: 作業者役割、タイムアウト、調整モードの調整
+
+### **🆚 モード比較**
+
+| 機能                 | **従来モード**            | **🎯 オーケストレーターモード** |
+| -------------------- | ------------------------- | ------------------------------- |
+| **タスク実行**       | AI 作業者への直接割り当て | 多段階制御ワークフロー          |
+| **計画立案**         | 手動タスク分解            | 自動インテリジェント計画        |
+| **進捗追跡**         | 基本完了ステータス        | 詳細ステップ単位進捗            |
+| **コンテキスト管理** | 手動調整                  | 自動コンテキスト共有            |
+| **要約化**           | 手動報告                  | 自動生成要約                    |
+| **スケーラビリティ** | ペイン容量に制限          | 動的ステップベーススケーリング  |
+| **エラー回復**       | 手動介入                  | インテリジェント再試行と適応    |
+| **最適用途**         | シンプルで明確なタスク    | 複雑な多段階プロジェクト        |
+
+### **🔧 設定例**
+
+`.claude/orchestrator.yaml`を作成:
+
+```yaml
+# Claude Company オーケストレーター設定
+manager:
+  role: "project_manager"
+  prompt: "あなたはプロジェクトマネージャーです。タスクを分析し、ワーカーに適切に割り当ててください。"
+  max_retries: 3
+  review_depth: 2
+
+workers:
+  max_workers: 4
+  roles:
+    - "developer"
+    - "tester"
+    - "reviewer"
+    - "documentation"
+  task_timeout: 1800 # 30分
+  coordination_mode: "hierarchical"
+
+session:
+  name: "claude-squad"
+  layout: "tiled"
+  auto_start_tmux: true
+
+defaults:
+  working_dir: "."
+  language: "ja" # ja | en
+```
+
+### **📈 ワークフロープロセス**
+
+```
+┌─────────────────┬─────────────────┬─────────────────┐
+│ 🎯 オーケストレータ │ 📝 コンテキスト管理 │ 🔧 作業者      │
+│                 │                 │                 │
+│ • タスク分析     │ • 要約生成       │ • ステップ実行   │
+│ • ステップ計画   │ • コンテキスト共有 │ • 進捗報告      │
+│ • 調整作業       │ • メモリ管理     │ • 品質チェック   │
+│ • 進捗監視       │ • 語数制限       │ • エラー処理    │
+│ • 最終レビュー   │ • 多言語対応     │ • 成果物作成    │
+└─────────────────┴─────────────────┴─────────────────┘
+
+1. 📋 **タスク入力**: 高レベルなタスク説明
+2. 🧠 **インテリジェント計画**: ステップへの自動分解
+3. 📊 **コンテキスト設定**: コンテキスト管理と要約の初期化
+4. ⚡ **ステップ実行**: コンテキスト共有でのステップ実行
+5. 🔄 **進捗監視**: 完了追跡と要約生成
+6. 🔍 **品質レビュー**: 多段階検証とテスト
+7. ✅ **統合**: 最終組み立てと完了
+```
+
+### **💡 高度な使用例**
+
 ```bash
-# Worker → Manager reporting format
-"実装完了：internal/auth/jwt.go - JWT token generation and validation implemented"
+# 大規模リファクタリングプロジェクト
+./claude-company --orchestrate --task "レガシーJavaアプリケーションをSpring Bootマイクロサービスに現代化"
 
-# Manager → Worker task assignment format  
-"サブタスク: Create user authentication middleware in internal/auth/middleware.go. Include JWT validation and error handling. Report completion when done."
+# テスト付きフルスタック開発
+./claude-company --orchestrate --task "Node.js API、PostgreSQLバックエンド、包括的テストスイート付きReactダッシュボードを構築"
 
-# Manager → Worker review requests
-"レビュー要請: Please review internal/auth/jwt.go for code quality, security best practices, and integration compatibility."
+# DevOpsとインフラ設定
+./claude-company --orchestrate --task "Docker、Kubernetes、監視スタックでCI/CDパイプラインをセットアップ"
+
+# ドキュメントと知識管理
+./claude-company --orchestrate --task "包括的API仕様書、アーキテクチャ図、開発者オンボーディングガイドを作成"
 ```
 
-## 🔧 Installation & Setup
+### **🎯 オーケストレーターモードの使用場面**
 
-### **System Requirements**
-- **Go 1.21+** for building from source
-- **tmux** - Required for pane management
-- **Claude AI access** - Via Claude CLI tool
-- **Unix-like OS** - Linux, macOS, or WSL
+**✅ 最適な用途:**
 
-### **Step-by-Step Installation**
+- 複雑な多段階プロジェクト
+- 複数コンポーネント間の調整が必要なタスク
+- 要件が不明確または進化するプロジェクト
+- 大規模リファクタリングや現代化の取り組み
+- 複数技術にまたがる統合プロジェクト
 
-1. **Install Dependencies**
+**❌ 推奨されない用途:**
+
+- シンプルな単一ファイル修正
+- 迅速なバグ修正やホットフィックス
+- 非常に特定的で狭い範囲のタスク
+- 即座の対応が必要な緊急修正
+
+## 🎯 動作原理
+
+### **管理者 AI の責任**
+
+- ❌ **コードを直接書くことはない**
+- ✅ **タスクを分析して分解する**
+- ✅ **作業者ペインを作成し管理する**
+- ✅ **作業者に具体的なサブタスクを割り当てる**
+- ✅ **完成作業の品質をレビューする**
+- ✅ **テストと統合を調整する**
+- ✅ **最終承認と完了を提供する**
+
+### **作業者 AI の責任**
+
+- ✅ **割り当てられたサブタスクを実装する**
+- ✅ **実際のコードを書き、ファイルを作成する**
+- ✅ **成果物と共に完了を報告する**
+- ✅ **フィードバックや修正要求に応える**
+- ✅ **レビューで特定された問題を修正する**
+
+### **コミュニケーションプロトコル**
+
+```bash
+# 作業者 → 管理者 報告形式
+"実装完了：internal/auth/jwt.go - JWTトークン生成と検証機能を実装しました"
+
+# 管理者 → 作業者 タスク割り当て形式
+"サブタスク: internal/auth/middleware.goでユーザー認証ミドルウェアを作成。JWT検証とエラーハンドリングを含めてください。完了時に報告してください。"
+
+# 管理者 → 作業者 レビュー要求
+"レビュー要請: internal/auth/jwt.goのコード品質、セキュリティベストプラクティス、統合互換性をレビューしてください。"
+```
+
+## 🔧 インストールとセットアップ
+
+### **システム要件**
+
+- **Go 1.21+** ソースからのビルド用
+- **tmux** - ペイン管理に必要
+- **Claude AI アクセス** - Claude CLI ツール経由
+- **Unix 系 OS** - Linux、macOS、または WSL
+
+### **ステップバイステップインストール**
+
+1. **依存関係のインストール**
+
 ```bash
 # macOS
 brew install tmux go
 
-# Ubuntu/Debian  
+# Ubuntu/Debian
 sudo apt install tmux golang-go
 
-# Install Claude CLI (follow official docs)
+# Claude CLIをインストール（公式ドキュメントに従って）
 ```
 
-2. **Build Claude Company**
+2. **Claude Company のビルド**
+
 ```bash
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
@@ -192,85 +337,111 @@ go mod tidy
 make build
 ```
 
-3. **Setup PATH (optional)**
+3. **PATH の設定（オプション）**
+
 ```bash
-# Option 1: Copy main binary
+# オプション1: メインバイナリをコピー
 cp claude-company ~/bin/claude-company
 
-# Option 2: Install via make (recommended)
+# オプション2: makeでインストール（推奨）
 make install
 
-# Update PATH if needed
+# 必要に応じてPATHを更新
 echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-
-## 🎭 Real-World Example
+## 🎭 実世界例
 
 ```bash
-./claude-company --task "Add user authentication system"
+./claude-company --task "ユーザー認証システムの追加"
 ```
 
-The manager pane will analyze the task and coordinate with worker panes to implement the authentication system in a structured way.
+管理者ペインがタスクを分析し、作業者ペインと連携して認証システムを構造化された方法で実装します。
 
-## 🚨 Troubleshooting
+## 🚨 トラブルシューティング
 
-### **Common Issues**
+### **よくある問題**
 
 **❌ "tmux: command not found"**
+
 ```bash
-# Install tmux first
-brew install tmux      # macOS
+# まずtmuxをインストール
+ brew install tmux      # macOS
 sudo apt install tmux  # Ubuntu
 ```
 
 **❌ "claude: command not found"**
+
 ```bash
-# Install Claude CLI following official documentation
-# Ensure it's available in your PATH
+# 公式ドキュメントに従ってClaude CLIをインストール
+# PATHで利用可能であることを確認
 ```
 
-**❌ Panes not responding**
+**❌ ペインが応答しない**
+
 ```bash
-# Check if Claude is running in each pane
+# 各ペインでClaudeが実行中か確認
 tmux list-panes -s -t claude-squad -F '#{pane_id}: #{pane_current_command}'
 
-# Restart session if needed
+# 必要に応じてセッションを再始動
 ./claude-company --setup
 ```
 
-**❌ Tasks not being distributed**
+**❌ タスクが配布されない**
+
 ```bash
-# Ensure at least 2 panes exist for manager/worker separation
-# Manager needs worker panes to delegate tasks to
+# 管理者/作業者分離のために少なくとも2つのペインが存在することを確認
+# 管理者はタスクを委譲するために作業者ペインが必要
 ```
 
-## 🤝 Contributing
+**❌ オーケストレーターモードが動作しない**
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
+```bash
+# 設定ファイルを確認
+cat .claude/orchestrator.yaml
 
-### **Development Setup**
+# 必要コンポーネントを検証
+ls internal/config/ internal/orchestrator/
+
+# まずシンプルなタスクでテスト
+./claude-company --orchestrate --task "シンプルなテストファイルを作成"
+```
+
+**❌ コンテキスト要約エラー**
+
+```bash
+# 要約の長さが100-200語以内か確認
+# 設定の言語設定を検証
+# YAML依存関係がインストールされていることを確認: go mod tidy
+```
+
+## 🤝 貢献
+
+貢献を歓迎します！[Contributing Guidelines](CONTRIBUTING.md)をご覧ください。
+
+### **開発環境セットアップ**
+
 ```bash
 git clone https://github.com/yourusername/claude-company.git
 cd claude-company
 go mod tidy
 make build
-./claude-company --task "Help improve this project"  # Meta! 😄
+./claude-company --task "このプロジェクトの改善を支援"  # メタ！ 😄
 ```
 
-## 📄 License
+## 📄 ライセンス
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT ライセンス - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
 
-## 🙏 Acknowledgments
+## 🙏 謝辞
 
-- **Claude AI** for making intelligent collaboration possible
-- **tmux** for robust terminal multiplexing
-- **Go community** for excellent tooling and libraries
+- **Claude AI** インテリジェントなコラボレーションを可能にしてくれたことに
+- **tmux** 堅牢なターミナル多重化に
+- **Go コミュニティ** 優秀なツールとライブラリに
 
 ---
 
-**Transform your development workflow with AI-powered team collaboration** 🚀
+**AI チームコラボレーションで開発ワークフローを変革しよう** 🚀
 
-*Made with ❤️ for developers who want to work with AI, not just use it*
+_AI を単に使うのではなく、AI と協力したい開発者のために ❤️ を込めて作りました_
