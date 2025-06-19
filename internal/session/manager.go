@@ -1,33 +1,85 @@
 package session
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"claude-company/internal/orchestrator"
 )
 
 type Manager struct {
-	SessionName  string
-	ClaudeCmd    string
-	ParentPanes  map[string]bool // 親ペイン追跡マップ
-	InitialPanes []string        // 初期ペイン状態
-	mainTask     string          // メインタスク
+	SessionName       string
+	ClaudeCmd         string
+	ParentPanes       map[string]bool // 親ペイン追跡マップ
+	InitialPanes      []string        // 初期ペイン状態
+	mainTask          string          // メインタスク
+	orchestratorMode  bool            // オーケストレーターモードフラグ
+	orchestrator      orchestrator.Orchestrator // オーケストレーターインスタンス
+	currentTask       *orchestrator.Task         // 現在実行中のタスク
+	stepManager       *orchestrator.StepManager  // ステップマネージャー
+	taskPlanManager   *orchestrator.TaskPlanManager // タスクプランマネージャー
 }
 
 func NewManager(sessionName, claudeCmd string) *Manager {
 	return &Manager{
-		SessionName:  sessionName,
-		ClaudeCmd:    claudeCmd,
-		ParentPanes:  make(map[string]bool),
-		InitialPanes: []string{},
-		mainTask:     "",
+		SessionName:      sessionName,
+		ClaudeCmd:        claudeCmd,
+		ParentPanes:      make(map[string]bool),
+		InitialPanes:     []string{},
+		mainTask:         "",
+		orchestratorMode: false,
 	}
 }
 
 func (m *Manager) SetMainTask(task string) {
 	m.mainTask = task
+}
+
+// SetOrchestratorMode enables or disables orchestrator mode
+func (m *Manager) SetOrchestratorMode(enabled bool) {
+	m.orchestratorMode = enabled
+}
+
+// IsOrchestratorMode returns whether orchestrator mode is enabled
+func (m *Manager) IsOrchestratorMode() bool {
+	return m.orchestratorMode
+}
+
+// InitializeOrchestrator initializes the orchestrator system
+func (m *Manager) InitializeOrchestrator(ctx context.Context) error {
+	if m.orchestrator != nil {
+		return nil // Already initialized
+	}
+
+	// Create event bus (mock implementation for now)
+	eventBus := &mockEventBus{}
+	
+	// Create storage (mock implementation for now)
+	storage := &mockStorage{}
+
+	// Initialize step manager
+	stepConfig := orchestrator.StepManagerConfig{
+		MaxConcurrentSteps: 5,
+		StepTimeout:        30 * time.Minute,
+		ExecutorPoolSize:   3,
+		RetryPolicy: orchestrator.RetryPolicy{
+			MaxRetries:     3,
+			InitialBackoff: 1 * time.Second,
+			MaxBackoff:     30 * time.Second,
+			BackoffFactor:  2.0,
+		},
+	}
+	m.stepManager = orchestrator.NewStepManager(eventBus, storage, stepConfig)
+
+	// Initialize task plan manager
+	m.taskPlanManager = orchestrator.NewTaskPlanManager(eventBus, storage, m.stepManager)
+
+	fmt.Println("✅ Orchestrator system initialized")
+	return nil
 }
 
 func (m *Manager) parseOutputLines(output []byte) []string {
@@ -76,6 +128,7 @@ ultrathink
 **作成**: tmux split-window -v -t claude-squad
 **起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
 **送信**: tmux send-keys -t 新ペインID Enter
+※送信は必須
 
 ## サブタスク送信
 **重要**: 子ペインのみに送信、親ペイン(%s)は管理専用
@@ -88,6 +141,7 @@ ultrathink
 完了条件: [完了基準]
 報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
 送信方法: tmux send-keys -t %s Enter
+※送信は必須
 `+"`"+`
 
 ## 進捗管理
@@ -104,6 +158,102 @@ ultrathink
 メインタスクの分析とサブタスク委託を開始してください。`,
 		claudePane,
 		m.mainTask,
+		claudePane,
+		claudePane,
+		claudePane,
+		claudePane)
+}
+
+// BuildOrchestratorPrompt builds the orchestrator-specific prompt
+func (m *Manager) BuildOrchestratorPrompt(claudePane string) string {
+	_, _ = m.GetPanes()
+
+	return fmt.Sprintf(`
+ultrathink
+
+AIタスクオーケストレーター(%s)として機能してください。
+
+## 制限事項
+禁止: コード編集、ファイル操作、ビルド、テスト、デプロイ、技術実装
+許可: タスク分析、計画立案、ステップベース実行管理、進捗監視、品質管理
+
+## メインタスク
+%s
+
+## オーケストレーション機能
+1. タスク分析と計画立案
+2. ステップベースのタスク分解
+3. 並列実行可能な作業の特定
+4. 依存関係の解決
+5. 進捗監視とレポート
+6. 品質保証とレビュー
+
+## 実行戦略
+- **Sequential**: 依存関係がある場合の逐次実行
+- **Parallel**: 独立した作業の並列実行  
+- **Hybrid**: 依存関係を考慮した最適化実行
+
+## ペイン操作（従来通り）
+**作成**: tmux split-window -v -t claude-squad
+**起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
+**送信**: tmux send-keys -t 新ペインID Enter
+※送信は必須
+
+## ステップベースタスク管理
+**重要**: 子ペイン(%s以外)のみに送信、親ペイン(%s)は管理専用
+
+新しいステップベーステンプレート:
+`+"`"+`
+サブタスク: [タスク名]
+目的: [達成目標]
+成果物: [具体的な成果物]
+完了条件: [完了基準]
+依存関係: [前提となるタスク]
+実行戦略: [Sequential/Parallel/Hybrid]
+報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
+送信方法: tmux send-keys -t %s Enter
+※送信は必須
+`+"`"+`
+
+従来テンプレート（後方互換性維持）:
+`+"`"+`
+サブタスク: [タスク名]
+目的: [達成目標]
+成果物: [具体的な成果物]
+完了条件: [完了基準]
+報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
+送信方法: tmux send-keys -t %s Enter
+※送信は必須
+`+"`"+`
+
+## 進捗管理の強化
+- リアルタイム進捗トラッキング
+- ステップ完了の自動検出
+- 並列タスクの同期管理
+- エラー発生時の自動リトライ
+- 全体統合の品質チェック
+
+## 報告フォーマット（拡張）
+- 実装完了: [ファイルパス] - [説明]
+- ステップ完了: [ステップ名] - [成果物]
+- 進捗報告: [全体進捗%%] - [現在のステップ]
+- 並列完了: [タスク群] - [同期状況]
+- エラー報告: [内容] - [リトライ状況]
+
+## オーケストレーター特有の指示
+1. 最初にタスクを分析し、最適な実行計画を立案
+2. 依存関係グラフを作成して並列化を最大化
+3. ステップごとの完了を確認して次のステップに進行
+4. 全体の進捗を定期的にレポート
+5. 最終的な統合テストで品質を保証
+
+メインタスクの分析とステップベース実行計画の立案を開始してください。`,
+		claudePane,
+		m.mainTask,
+		claudePane,
+		claudePane,
+		claudePane,
+		claudePane,
 		claudePane,
 		claudePane,
 		claudePane,
@@ -448,5 +598,263 @@ func (m *Manager) ExecuteCommand(command string) error {
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("command failed: %v, output: %s", err, string(output))
 	}
+	return nil
+}
+
+// CreateTask creates a new orchestrated task
+func (m *Manager) CreateTask(ctx context.Context, req orchestrator.TaskRequest) (*orchestrator.TaskResponse, error) {
+	if !m.orchestratorMode {
+		return nil, fmt.Errorf("orchestrator mode is not enabled")
+	}
+
+	if m.orchestrator == nil {
+		if err := m.InitializeOrchestrator(ctx); err != nil {
+			return nil, fmt.Errorf("failed to initialize orchestrator: %w", err)
+		}
+	}
+
+	// Create task using orchestrator
+	resp, err := m.orchestrator.CreateTask(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create task: %w", err)
+	}
+
+	// Store current task reference
+	if task, err := m.orchestrator.GetTask(ctx, resp.TaskID); err == nil {
+		m.currentTask = task
+	}
+
+	return resp, nil
+}
+
+// GetCurrentTask returns the currently active task
+func (m *Manager) GetCurrentTask() *orchestrator.Task {
+	return m.currentTask
+}
+
+// CreatePlanForCurrentTask creates a plan for the current task
+func (m *Manager) CreatePlanForCurrentTask(ctx context.Context) (*orchestrator.TaskPlan, error) {
+	if m.currentTask == nil {
+		return nil, fmt.Errorf("no current task available")
+	}
+
+	if m.taskPlanManager == nil {
+		return nil, fmt.Errorf("task plan manager not initialized")
+	}
+
+	plan := &orchestrator.TaskPlan{
+		TaskID:    m.currentTask.ID,
+		Strategy:  orchestrator.PlanStrategyHybrid,
+		Steps:     []orchestrator.TaskStep{},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	
+	err := m.taskPlanManager.CreatePlan(ctx, plan)
+	if err != nil {
+		return nil, err
+	}
+	
+	return plan, nil
+}
+
+// ExecutePlan executes a task plan with step-based management
+func (m *Manager) ExecutePlan(ctx context.Context, planID string) error {
+	if m.taskPlanManager == nil {
+		return fmt.Errorf("task plan manager not initialized")
+	}
+
+	return m.taskPlanManager.ExecutePlan(ctx, planID)
+}
+
+// SendTaskToPane sends an orchestrated task to a specific pane
+func (m *Manager) SendTaskToPane(ctx context.Context, paneID string, task *orchestrator.Task) error {
+	if m.IsParentPane(paneID) {
+		fmt.Printf("⚠️  Blocked orchestrated task assignment to parent pane %s\n", paneID)
+		fmt.Println("🔄 Redirecting to child pane...")
+		return m.SendTaskToChildPane(ctx, task)
+	}
+
+	// Build task command based on mode
+	var command string
+	if m.orchestratorMode {
+		command = m.buildOrchestratedTaskCommand(task)
+	} else {
+		command = m.buildTraditionalTaskCommand(task)
+	}
+
+	fmt.Printf("✅ Orchestrated task assigned to child pane %s\n", paneID)
+	return m.SendToPane(paneID, command)
+}
+
+// SendTaskToChildPane sends a task to any available child pane
+func (m *Manager) SendTaskToChildPane(ctx context.Context, task *orchestrator.Task) error {
+	childPanes, err := m.GetChildPanes()
+	if err != nil {
+		return fmt.Errorf("failed to get child panes: %v", err)
+	}
+
+	if len(childPanes) == 0 {
+		// Create new pane if no child panes exist
+		newPaneID, err := m.CreateNewPaneAndRegisterAsChild()
+		if err != nil {
+			return fmt.Errorf("failed to create new pane: %v", err)
+		}
+
+		if err := m.StartClaudeInNewPane(newPaneID); err != nil {
+			return fmt.Errorf("failed to start Claude in new pane: %v", err)
+		}
+
+		return m.SendTaskToPane(ctx, newPaneID, task)
+	}
+
+	// Use the first available child pane
+	return m.SendTaskToPane(ctx, childPanes[0], task)
+}
+
+// buildOrchestratedTaskCommand builds a command string for orchestrated tasks
+func (m *Manager) buildOrchestratedTaskCommand(task *orchestrator.Task) string {
+	return fmt.Sprintf(`サブタスク: %s
+目的: %s
+成果物: タスク完了時の具体的成果物
+完了条件: %s
+実行戦略: Hybrid
+報告方法: tmux send-keys -t %%1 "実装完了: %s - %s" Enter; sleep 1; tmux send-keys -t %%1 "" Enter`,
+		task.Title,
+		task.Description,
+		"実装とテストが完了していること",
+		task.Title,
+		"実装完了")
+}
+
+// buildTraditionalTaskCommand builds a command string for traditional tasks
+func (m *Manager) buildTraditionalTaskCommand(task *orchestrator.Task) string {
+	return fmt.Sprintf(`サブタスク: %s
+目的: %s
+成果物: タスク完了時の具体的成果物
+完了条件: %s
+報告方法: tmux send-keys -t %%1 "実装完了: %s - %s" Enter; sleep 1; tmux send-keys -t %%1 "" Enter`,
+		task.Title,
+		task.Description,
+		"実装とテストが完了していること",
+		task.Title,
+		"実装完了")
+}
+
+// GetPromptForMode returns the appropriate prompt based on the current mode
+func (m *Manager) GetPromptForMode(claudePane string) string {
+	if m.orchestratorMode {
+		return m.BuildOrchestratorPrompt(claudePane)
+	}
+	return m.BuildManagerPrompt(claudePane)
+}
+
+// ToggleOrchestratorMode toggles between orchestrator and traditional manager mode
+func (m *Manager) ToggleOrchestratorMode(ctx context.Context) error {
+	m.orchestratorMode = !m.orchestratorMode
+	
+	if m.orchestratorMode {
+		fmt.Println("🔄 Switching to Orchestrator Mode...")
+		if err := m.InitializeOrchestrator(ctx); err != nil {
+			m.orchestratorMode = false // Revert on error
+			return fmt.Errorf("failed to initialize orchestrator: %w", err)
+		}
+		fmt.Println("✅ Orchestrator Mode enabled")
+	} else {
+		fmt.Println("🔄 Switching to Traditional Manager Mode...")
+		fmt.Println("✅ Traditional Manager Mode enabled")
+	}
+	
+	return nil
+}
+
+// GetModeStatus returns the current mode status
+func (m *Manager) GetModeStatus() string {
+	if m.orchestratorMode {
+		return "Orchestrator Mode (Step-based execution)"
+	}
+	return "Traditional Manager Mode (Basic task delegation)"
+}
+
+// Mock implementations for orchestrator interfaces
+type mockEventBus struct{}
+
+func (m *mockEventBus) Publish(ctx context.Context, event orchestrator.TaskEvent) error {
+	fmt.Printf("📡 Event: %s for task %s\n", event.Type, event.TaskID)
+	return nil
+}
+
+func (m *mockEventBus) Subscribe(ctx context.Context, eventTypes []orchestrator.TaskEventType) (<-chan orchestrator.TaskEvent, error) {
+	ch := make(chan orchestrator.TaskEvent, 10)
+	return ch, nil
+}
+
+func (m *mockEventBus) Unsubscribe(ctx context.Context, subscription string) error {
+	return nil
+}
+
+func (m *mockEventBus) AddFilter(ctx context.Context, filter orchestrator.EventFilter) error {
+	return nil
+}
+
+func (m *mockEventBus) RemoveFilter(ctx context.Context, filterID string) error {
+	return nil
+}
+
+type mockStorage struct{}
+
+func (m *mockStorage) SaveTask(ctx context.Context, task *orchestrator.Task) error {
+	return nil
+}
+
+func (m *mockStorage) LoadTask(ctx context.Context, taskID string) (*orchestrator.Task, error) {
+	return nil, fmt.Errorf("task not found")
+}
+
+func (m *mockStorage) ListTasks(ctx context.Context, filter orchestrator.TaskFilter) ([]*orchestrator.Task, error) {
+	return []*orchestrator.Task{}, nil
+}
+
+func (m *mockStorage) DeleteTask(ctx context.Context, taskID string) error {
+	return nil
+}
+
+func (m *mockStorage) SavePlan(ctx context.Context, plan *orchestrator.TaskPlan) error {
+	return nil
+}
+
+func (m *mockStorage) LoadPlan(ctx context.Context, planID string) (*orchestrator.TaskPlan, error) {
+	return nil, fmt.Errorf("plan not found")
+}
+
+func (m *mockStorage) DeletePlan(ctx context.Context, planID string) error {
+	return nil
+}
+
+func (m *mockStorage) SaveWorker(ctx context.Context, worker *orchestrator.Worker) error {
+	return nil
+}
+
+func (m *mockStorage) LoadWorker(ctx context.Context, workerID string) (*orchestrator.Worker, error) {
+	return nil, fmt.Errorf("worker not found")
+}
+
+func (m *mockStorage) ListWorkers(ctx context.Context) ([]*orchestrator.Worker, error) {
+	return []*orchestrator.Worker{}, nil
+}
+
+func (m *mockStorage) DeleteWorker(ctx context.Context, workerID string) error {
+	return nil
+}
+
+func (m *mockStorage) SaveEvent(ctx context.Context, event *orchestrator.TaskEvent) error {
+	return nil
+}
+
+func (m *mockStorage) ListEvents(ctx context.Context, filter orchestrator.EventFilter) ([]*orchestrator.TaskEvent, error) {
+	return []*orchestrator.TaskEvent{}, nil
+}
+
+func (m *mockStorage) Cleanup(ctx context.Context) error {
 	return nil
 }
