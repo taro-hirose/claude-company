@@ -74,7 +74,8 @@ ultrathink
 
 ## ペイン操作
 **作成**: tmux split-window -v -t claude-squad
-**起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter Enter 
+**起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
+**送信**: tmux send-keys -t 新ペインID Enter
 
 ## サブタスク送信
 **重要**: 子ペインのみに送信、親ペイン(%s)は管理専用
@@ -85,7 +86,8 @@ ultrathink
 目的: [達成目標]
 成果物: [具体的な成果物]
 完了条件: [完了基準]
-報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter Enter
+報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
+送信方法: tmux send-keys -t %s Enter
 `+"`"+`
 
 ## 進捗管理
@@ -102,6 +104,7 @@ ultrathink
 メインタスクの分析とサブタスク委託を開始してください。`,
 		claudePane,
 		m.mainTask,
+		claudePane,
 		claudePane,
 		claudePane,
 		claudePane)

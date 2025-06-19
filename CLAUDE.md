@@ -32,11 +32,6 @@ Claude Company consists of two main components:
 
 ### 1. Storm (Tmux Session Manager)
 
-- **Entry point**: `/cmd/ccs/main.go`
-- **Binary location**: `bin/storm`
-- **Purpose**: Fast tmux session management with commands for creating, attaching, killing, and switching sessions
-- **Key commands**: `new`, `attach/a`, `kill/k`, `list/ls`, `switch/s`, `rename/r`
-
 ### 2. Deploy (AI Task Manager)
 
 - **Entry point**: `/main.go`
