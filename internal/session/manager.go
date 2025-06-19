@@ -12,16 +12,16 @@ import (
 )
 
 type Manager struct {
-	SessionName       string
-	ClaudeCmd         string
-	ParentPanes       map[string]bool // 親ペイン追跡マップ
-	InitialPanes      []string        // 初期ペイン状態
-	mainTask          string          // メインタスク
-	orchestratorMode  bool            // オーケストレーターモードフラグ
-	orchestrator      orchestrator.Orchestrator // オーケストレーターインスタンス
-	currentTask       *orchestrator.Task         // 現在実行中のタスク
-	stepManager       *orchestrator.StepManager  // ステップマネージャー
-	taskPlanManager   *orchestrator.TaskPlanManager // タスクプランマネージャー
+	SessionName      string
+	ClaudeCmd        string
+	ParentPanes      map[string]bool               // 親ペイン追跡マップ
+	InitialPanes     []string                      // 初期ペイン状態
+	mainTask         string                        // メインタスク
+	orchestratorMode bool                          // オーケストレーターモードフラグ
+	orchestrator     orchestrator.Orchestrator     // オーケストレーターインスタンス
+	currentTask      *orchestrator.Task            // 現在実行中のタスク
+	stepManager      *orchestrator.StepManager     // ステップマネージャー
+	taskPlanManager  *orchestrator.TaskPlanManager // タスクプランマネージャー
 }
 
 func NewManager(sessionName, claudeCmd string) *Manager {
@@ -57,7 +57,7 @@ func (m *Manager) InitializeOrchestrator(ctx context.Context) error {
 
 	// Create event bus (mock implementation for now)
 	eventBus := &mockEventBus{}
-	
+
 	// Create storage (mock implementation for now)
 	storage := &mockStorage{}
 
@@ -125,13 +125,15 @@ ultrathink
 6. 統合テスト指示・完了判定
 
 ## ペイン操作
+**重要**: 新ペインIDのみに送信、親ペイン(%s)は管理専用なので'claude --dangerously-skip-permissions'の送信は不可
 **作成**: tmux split-window -v -t claude-squad
 **起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
 **送信**: tmux send-keys -t 新ペインID Enter
-※送信は必須
+
+サブタスクを作成するときの起動、送信は必須
 
 ## サブタスク送信
-**重要**: 子ペインのみに送信、親ペイン(%s)は管理専用
+**重要**: 子ペインのみに送信、親ペイン(%s)は管理専用なのでサブタスクの送信は不可
 
 テンプレート:
 `+"`"+`
@@ -141,7 +143,8 @@ ultrathink
 完了条件: [完了基準]
 報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
 送信方法: tmux send-keys -t %s Enter
-※送信は必須
+
+報告の時の送信は必須
 `+"`"+`
 
 ## 進捗管理
@@ -158,6 +161,7 @@ ultrathink
 メインタスクの分析とサブタスク委託を開始してください。`,
 		claudePane,
 		m.mainTask,
+		claudePane,
 		claudePane,
 		claudePane,
 		claudePane,
@@ -649,12 +653,12 @@ func (m *Manager) CreatePlanForCurrentTask(ctx context.Context) (*orchestrator.T
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	
+
 	err := m.taskPlanManager.CreatePlan(ctx, plan)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return plan, nil
 }
 
@@ -752,7 +756,7 @@ func (m *Manager) GetPromptForMode(claudePane string) string {
 // ToggleOrchestratorMode toggles between orchestrator and traditional manager mode
 func (m *Manager) ToggleOrchestratorMode(ctx context.Context) error {
 	m.orchestratorMode = !m.orchestratorMode
-	
+
 	if m.orchestratorMode {
 		fmt.Println("🔄 Switching to Orchestrator Mode...")
 		if err := m.InitializeOrchestrator(ctx); err != nil {
@@ -764,7 +768,7 @@ func (m *Manager) ToggleOrchestratorMode(ctx context.Context) error {
 		fmt.Println("🔄 Switching to Traditional Manager Mode...")
 		fmt.Println("✅ Traditional Manager Mode enabled")
 	}
-	
+
 	return nil
 }
 
