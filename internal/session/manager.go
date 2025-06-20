@@ -201,7 +201,7 @@ AIタスクオーケストレーター(%s)として機能してください。
 **作成**: tmux split-window -v -t claude-squad
 **起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
 **送信**: tmux send-keys -t 新ペインID Enter
-※送信は必須
+※送信は起動の1秒後に実行することを必須とする
 
 ## ステップベースタスク管理
 **重要**: 子ペイン(%s以外)のみに送信、親ペイン(%s)は管理専用
@@ -216,7 +216,7 @@ AIタスクオーケストレーター(%s)として機能してください。
 実行戦略: [Sequential/Parallel/Hybrid]
 報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
 送信方法: tmux send-keys -t %s Enter
-※送信は必須
+※送信は報告の1秒後に実行することを必須とする。
 `+"`"+`
 
 従来テンプレート（後方互換性維持）:
