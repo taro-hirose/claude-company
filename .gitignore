@@ -89,3 +89,6 @@ temp/
 # Test results
 test-results/
 *.xml
+
+# Main binary
+claude-company

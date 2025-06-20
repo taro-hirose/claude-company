@@ -138,6 +138,8 @@ ultrathink
 
 ## サブタスク送信
 **重要**: 子ペインのみに送信、親ペイン(%s)は管理専用なのでサブタスクの送信は不可
+**送信**: tmux send-keys -t 子ウィンドウ名 Enter
+※送信は起動の1秒後に実行することを必須とする
 
 テンプレート:
 `+"`"+`
@@ -208,7 +210,9 @@ AIタスクオーケストレーター(%s)として機能してください。
 ※送信は起動の1秒後に実行することを必須とする
 
 ## ステップベースタスク管理
-**重要**: 子ペイン(%s以外)のみに送信、親ペイン(%s)は管理専用
+**重要**: 子ウィンドウ(%s以外)のみに送信、親ペイン(%s)は管理専用
+**送信**: tmux send-keys -t 子ウィンドウ名 Enter
+※送信は起動の1秒後に実行することを必須とする
 
 新しいステップベーステンプレート
 `+"`"+`
@@ -220,6 +224,7 @@ AIタスクオーケストレーター(%s)として機能してください。
 実行戦略: [Sequential/Parallel/Hybrid]
 報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
 送信方法: tmux send-keys -t %s Enter
+※報告内容は詳細に記載
 ※送信は報告の1秒後に実行することを必須とする。
 `+"`"+`
 
@@ -231,7 +236,8 @@ AIタスクオーケストレーター(%s)として機能してください。
 完了条件: [完了基準]
 報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
 送信方法: tmux send-keys -t %s Enter
-※送信は必須
+※報告内容は詳細に記載
+※送信は報告の1秒後に実行することを必須とする。
 `+"`"+`
 
 ## 進捗管理の強化
@@ -277,7 +283,7 @@ func (m *Manager) Setup() error {
 	if err := m.recordInitialPanes(); err != nil {
 		return fmt.Errorf("failed to record initial panes: %v", err)
 	}
-	
+
 	// 初期状態のウィンドウも記録
 	if err := m.recordInitialWindows(); err != nil {
 		return fmt.Errorf("failed to record initial windows: %v", err)
