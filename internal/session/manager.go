@@ -16,6 +16,8 @@ type Manager struct {
 	ClaudeCmd        string
 	ParentPanes      map[string]bool               // 親ペイン追跡マップ
 	InitialPanes     []string                      // 初期ペイン状態
+	ParentWindows    map[string]bool               // 親ウィンドウ追跡マップ
+	InitialWindows   []string                      // 初期ウィンドウ状態
 	mainTask         string                        // メインタスク
 	orchestratorMode bool                          // オーケストレーターモードフラグ
 	orchestrator     orchestrator.Orchestrator     // オーケストレーターインスタンス
@@ -30,6 +32,8 @@ func NewManager(sessionName, claudeCmd string) *Manager {
 		ClaudeCmd:        claudeCmd,
 		ParentPanes:      make(map[string]bool),
 		InitialPanes:     []string{},
+		ParentWindows:    make(map[string]bool),
+		InitialWindows:   []string{},
 		mainTask:         "",
 		orchestratorMode: false,
 	}
@@ -124,13 +128,13 @@ ultrathink
 5. 子ペインに依頼したサブタスクの進捗監視・成果物レビュー
 6. 統合テスト指示・完了判定
 
-## ペイン操作
-**重要**: 新ペインIDのみに送信、親ペイン(%s)は管理専用なので'claude --dangerously-skip-permissions'の送信は不可
-**作成**: tmux split-window -v -t claude-squad
-**起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
-**送信**: tmux send-keys -t 新ペインID Enter
+## ウィンドウ操作
+**重要**: 新ウィンドウのみに送信、親ペイン(%s)は管理専用なので'claude --dangerously-skip-permissions'の送信は不可
+**作成**: tmux new-window -t claude-squad
+**起動**: tmux send-keys -t 新ウィンドウ名 'claude --dangerously-skip-permissions' Enter
+**送信**: tmux send-keys -t 新ウィンドウ名 Enter
 
-サブタスクを作成するときの起動、送信は必須
+サブタスクを作成するときの起動、1秒後に送信することは必須とする
 
 ## サブタスク送信
 **重要**: 子ペインのみに送信、親ペイン(%s)は管理専用なのでサブタスクの送信は不可
@@ -144,7 +148,7 @@ ultrathink
 報告方法: tmux send-keys -t %s '[報告内容]' Enter; sleep 1; tmux send-keys -t %s '' Enter
 送信方法: tmux send-keys -t %s Enter
 
-報告の時の送信は必須
+報告をしてからの1秒後の送信は必須とする
 `+"`"+`
 
 ## 進捗管理
@@ -197,16 +201,16 @@ AIタスクオーケストレーター(%s)として機能してください。
 - **Parallel**: 独立した作業の並列実行  
 - **Hybrid**: 依存関係を考慮した最適化実行
 
-## ペイン操作（従来通り）
-**作成**: tmux split-window -v -t claude-squad
-**起動**: tmux send-keys -t 新ペインID 'claude --dangerously-skip-permissions' Enter
-**送信**: tmux send-keys -t 新ペインID Enter
+## ウィンドウ操作
+**作成**: tmux new-window -t claude-squad
+**起動**: tmux send-keys -t 新ウィンドウ名 'claude --dangerously-skip-permissions' Enter
+**送信**: tmux send-keys -t 新ウィンドウ名 Enter
 ※送信は起動の1秒後に実行することを必須とする
 
 ## ステップベースタスク管理
 **重要**: 子ペイン(%s以外)のみに送信、親ペイン(%s)は管理専用
 
-新しいステップベーステンプレート:
+新しいステップベーステンプレート
 `+"`"+`
 サブタスク: [タスク名]
 目的: [達成目標]
@@ -272,6 +276,11 @@ func (m *Manager) Setup() error {
 	// 初期状態のペインを記録
 	if err := m.recordInitialPanes(); err != nil {
 		return fmt.Errorf("failed to record initial panes: %v", err)
+	}
+	
+	// 初期状態のウィンドウも記録
+	if err := m.recordInitialWindows(); err != nil {
+		return fmt.Errorf("failed to record initial windows: %v", err)
 	}
 
 	cmd := exec.Command("tmux", "has-session", "-t", m.SessionName)
@@ -405,6 +414,17 @@ func (m *Manager) SendToPane(paneID, command string) error {
 	return nil
 }
 
+// SendToWindow sends a command to a specific window
+func (m *Manager) SendToWindow(windowID, command string) error {
+	cmd := exec.Command("tmux", "send-keys", "-t", windowID, command, "Enter")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux command failed: %v, output: %s", err, string(output))
+	}
+
+	fmt.Printf("Task assigned to window %s\n", windowID)
+	return nil
+}
+
 func (m *Manager) SendToNewPaneOnly(command string) error {
 	newPaneID, err := m.CreateNewPaneAndGetID()
 	if err != nil {
@@ -421,6 +441,26 @@ func (m *Manager) SendToNewPaneOnly(command string) error {
 	}
 
 	fmt.Printf("📤 Task assigned to new pane %s only\n", newPaneID)
+	return nil
+}
+
+// SendToNewWindowOnly creates a new window and sends a command to it
+func (m *Manager) SendToNewWindowOnly(command string) error {
+	newWindowID, err := m.CreateNewWindowAndGetID()
+	if err != nil {
+		return fmt.Errorf("failed to create new window: %v", err)
+	}
+
+	if err := m.StartClaudeInNewWindow(newWindowID); err != nil {
+		return fmt.Errorf("failed to start Claude in new window: %v", err)
+	}
+
+	cmd := exec.Command("tmux", "send-keys", "-t", newWindowID, command, "Enter")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux command failed: %v, output: %s", err, string(output))
+	}
+
+	fmt.Printf("📤 Task assigned to new window %s only\n", newWindowID)
 	return nil
 }
 
@@ -497,8 +537,40 @@ func (m *Manager) StartClaudeInNewPane(paneID string) error {
 	return fmt.Errorf("Claude failed to start within timeout in pane %s", paneID)
 }
 
+// StartClaudeInNewWindow starts Claude in a specific window
+func (m *Manager) StartClaudeInNewWindow(windowID string) error {
+	fmt.Printf("🤖 Starting Claude Code in new window %s...\n", windowID)
+	cmd := exec.Command("tmux", "send-keys", "-t", windowID, m.ClaudeCmd, "Enter")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to start Claude in window %s: %w", windowID, err)
+	}
+
+	for i := 0; i < 10; i++ {
+		time.Sleep(1 * time.Second)
+		if m.isClaudeReadyInWindow(windowID) {
+			fmt.Printf("✅ Claude is ready in window %s\n", windowID)
+			return nil
+		}
+		fmt.Printf("⏳ Waiting for Claude to start in window %s... (%d/10)\n", windowID, i+1)
+	}
+
+	return fmt.Errorf("Claude failed to start within timeout in window %s", windowID)
+}
+
 func (m *Manager) isClaudeReady(paneID string) bool {
 	cmd := exec.Command("tmux", "capture-pane", "-t", paneID, "-p")
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+
+	content := string(output)
+	return strings.Contains(content, "claude") || strings.Contains(content, "ready") || strings.Contains(content, "$")
+}
+
+// isClaudeReadyInWindow checks if Claude is ready in a specific window
+func (m *Manager) isClaudeReadyInWindow(windowID string) bool {
+	cmd := exec.Command("tmux", "capture-pane", "-t", windowID, "-p")
 	output, err := cmd.Output()
 	if err != nil {
 		return false
@@ -594,6 +666,116 @@ func (m *Manager) CreateNewPaneAndRegisterAsChild() (string, error) {
 	// 新しいペインは自動的に子ペインとして扱われる（parentPanesに含まれない）
 	fmt.Printf("📝 Registered new child pane: %s\n", newPaneID)
 	return newPaneID, nil
+}
+
+// CreateNewWindowAndGetID creates a new tmux window and returns its ID
+func (m *Manager) CreateNewWindowAndGetID() (string, error) {
+	// Get current windows before creation
+	beforeWindows, err := m.GetWindows()
+	if err != nil {
+		return "", fmt.Errorf("failed to get windows before creation: %v", err)
+	}
+
+	// Create new window in the session
+	cmd := exec.Command("tmux", "new-window", "-t", m.SessionName)
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to create new window: %v", err)
+	}
+
+	// Wait for window creation
+	time.Sleep(500 * time.Millisecond)
+
+	// Get windows after creation
+	afterWindows, err := m.GetWindows()
+	if err != nil {
+		return "", fmt.Errorf("failed to get windows after creation: %v", err)
+	}
+
+	// Find the new window ID by comparing before and after
+	for _, afterWindow := range afterWindows {
+		found := false
+		for _, beforeWindow := range beforeWindows {
+			if afterWindow == beforeWindow {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return afterWindow, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to identify new window ID")
+}
+
+// GetWindows returns a list of window IDs in the session
+func (m *Manager) GetWindows() ([]string, error) {
+	cmd := exec.Command("tmux", "list-windows", "-t", m.SessionName, "-F", "#{window_id}")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get windows: %v", err)
+	}
+
+	return m.parseOutputLines(output), nil
+}
+
+// recordInitialWindows records the initial state of windows
+func (m *Manager) recordInitialWindows() error {
+	windows, err := m.GetWindows()
+	if err != nil {
+		// Session might not exist yet, which is fine
+		return nil
+	}
+
+	m.InitialWindows = make([]string, len(windows))
+	copy(m.InitialWindows, windows)
+
+	// Record initial windows as parent windows
+	for _, window := range windows {
+		m.ParentWindows[window] = true
+	}
+
+	fmt.Printf("🔍 Recorded %d initial parent windows\n", len(windows))
+	return nil
+}
+
+// IsParentWindow checks if the specified window is a parent window
+func (m *Manager) IsParentWindow(windowID string) bool {
+	return m.ParentWindows[windowID]
+}
+
+// IsChildWindow checks if the specified window is a child window
+func (m *Manager) IsChildWindow(windowID string) bool {
+	return !m.ParentWindows[windowID]
+}
+
+// GetChildWindows returns a list of child windows
+func (m *Manager) GetChildWindows() ([]string, error) {
+	allWindows, err := m.GetWindows()
+	if err != nil {
+		return nil, err
+	}
+
+	var childWindows []string
+	for _, window := range allWindows {
+		if m.IsChildWindow(window) {
+			childWindows = append(childWindows, window)
+		}
+	}
+
+	return childWindows, nil
+}
+
+// CreateNewWindowAndRegisterAsChild creates a new window and registers it as a child
+func (m *Manager) CreateNewWindowAndRegisterAsChild() (string, error) {
+	newWindowID, err := m.CreateNewWindowAndGetID()
+	if err != nil {
+		return "", err
+	}
+
+	// New windows are automatically treated as child windows (not included in ParentWindows)
+	fmt.Printf("📝 Registered new child window: %s\n", newWindowID)
+	return newWindowID, nil
 }
 
 // ExecuteCommand executes a shell command directly
